@@ -1,0 +1,1049 @@
+/* ClinicalKB Study — Main App Logic */
+
+(function () {
+  'use strict';
+
+  // ==================== STATE ====================
+  let DB = null;           // Full KB data
+  let progress = {};       // Per-note progress tracking
+  let session = null;      // Current study session state
+  let currentView = 'home';
+  let browseFilter = 'All';
+  let browseSearch = '';
+  let previousView = 'home';
+
+  const STORAGE_KEY = 'clinicalkb-progress';
+  const SESSION_KEY = 'clinicalkb-session';
+  const STREAK_KEY = 'clinicalkb-streak';
+  const DARK_KEY = 'clinicalkb-dark';
+  const COOLDOWN_DAYS = 3;
+
+  // ==================== INIT ====================
+  async function init() {
+    loadProgress();
+    loadDarkMode();
+    try {
+      const resp = await fetch('data.json');
+      DB = await resp.json();
+      renderHome();
+      setupNav();
+      setupDarkToggle();
+    } catch (e) {
+      document.getElementById('main').innerHTML =
+        '<div class="card" style="margin-top:40px;text-align:center;">' +
+        '<p style="font-size:16px;font-weight:600;">Could not load data</p>' +
+        '<p style="color:var(--text-muted);margin-top:8px;">Make sure data.json is in the same folder as index.html</p></div>';
+    }
+  }
+
+  // ==================== STORAGE ====================
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      progress = raw ? JSON.parse(raw) : {};
+    } catch { progress = {}; }
+  }
+
+  function saveProgress() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  }
+
+  function getNoteProgress(noteId) {
+    if (!progress[noteId]) {
+      progress[noteId] = { lastSeen: null, timesSeen: 0, confidence: null, streak: 0 };
+    }
+    return progress[noteId];
+  }
+
+  function recordView(noteId, confidence) {
+    const p = getNoteProgress(noteId);
+    p.lastSeen = new Date().toISOString().slice(0, 10);
+    p.timesSeen++;
+    if (confidence) {
+      if (confidence === 'solid' && p.confidence === 'solid') {
+        p.streak++;
+      } else if (confidence === 'solid') {
+        p.streak = 1;
+      } else {
+        p.streak = 0;
+      }
+      p.confidence = confidence;
+    }
+    saveProgress();
+  }
+
+  function getStreak() {
+    try {
+      const raw = localStorage.getItem(STREAK_KEY);
+      const data = raw ? JSON.parse(raw) : { count: 0, lastDate: null };
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      if (data.lastDate === today) return data;
+      if (data.lastDate === yesterday) return data; // streak continues if they do today
+      if (data.lastDate && data.lastDate < yesterday) return { count: 0, lastDate: data.lastDate };
+      return data;
+    } catch { return { count: 0, lastDate: null }; }
+  }
+
+  function completeSessionStreak() {
+    const today = new Date().toISOString().slice(0, 10);
+    const streak = getStreak();
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (streak.lastDate === today) return streak; // already counted today
+    if (streak.lastDate === yesterday || streak.lastDate === today) {
+      streak.count++;
+    } else {
+      streak.count = 1;
+    }
+    streak.lastDate = today;
+    localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
+    return streak;
+  }
+
+  // ==================== DARK MODE ====================
+  function loadDarkMode() {
+    const dark = localStorage.getItem(DARK_KEY);
+    if (dark === 'true' || (!dark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.body.classList.add('dark');
+    }
+  }
+
+  function setupDarkToggle() {
+    document.getElementById('dark-toggle').addEventListener('click', function () {
+      document.body.classList.toggle('dark');
+      localStorage.setItem(DARK_KEY, document.body.classList.contains('dark'));
+      const icon = document.getElementById('dark-icon');
+      icon.textContent = document.body.classList.contains('dark') ? '\u2600' : '\u263E';
+    });
+    const icon = document.getElementById('dark-icon');
+    icon.textContent = document.body.classList.contains('dark') ? '\u2600' : '\u263E';
+  }
+
+  // ==================== NAVIGATION ====================
+  function setupNav() {
+    document.querySelectorAll('.nav-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var view = btn.dataset.view;
+        showView(view);
+      });
+    });
+  }
+
+  function showView(viewName) {
+    previousView = currentView;
+    currentView = viewName;
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+    document.getElementById('view-' + viewName).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === viewName);
+    });
+
+    // Update topbar title
+    var titles = {
+      home: 'ClinicalKB Study',
+      scenario: 'Today\'s Case',
+      pharm: 'Pharm Flash',
+      concept: 'Concept Check',
+      pearls: 'Quick Hits',
+      complete: 'Session Complete',
+      progress: 'Progress',
+      browse: 'Browse',
+      note: 'Note Detail'
+    };
+    document.getElementById('topbar-title').textContent = titles[viewName] || 'ClinicalKB Study';
+
+    // Render views
+    if (viewName === 'home') renderHome();
+    if (viewName === 'progress') renderDashboard();
+    if (viewName === 'browse') renderBrowse();
+  }
+
+  // ==================== SELECTION ALGORITHM ====================
+  function selectNote(category) {
+    var ids = DB.categories[category];
+    if (!ids || ids.length === 0) return null;
+
+    var today = new Date().toISOString().slice(0, 10);
+    var scored = ids.map(function (id) {
+      var p = progress[id] || {};
+      var daysSince = p.lastSeen
+        ? Math.floor((Date.now() - new Date(p.lastSeen).getTime()) / 86400000)
+        : 999;
+      // Higher score = more likely to be selected
+      var score = daysSince;
+      // Boost notes never seen
+      if (!p.lastSeen) score += 100;
+      // Boost notes rated needs-review or study-more
+      if (p.confidence === 'needs-review') score += 20;
+      if (p.confidence === 'study-more') score += 40;
+      // Penalize recently seen
+      if (daysSince < COOLDOWN_DAYS) score = -1;
+      return { id: id, score: score };
+    });
+
+    // Filter out cooled-down notes
+    var eligible = scored.filter(function (s) { return s.score > 0; });
+    // If all are on cooldown, just use all
+    if (eligible.length === 0) eligible = scored;
+
+    // Sort by score descending, take top 5, pick randomly from those
+    eligible.sort(function (a, b) { return b.score - a.score; });
+    var pool = eligible.slice(0, Math.min(5, eligible.length));
+    return pool[Math.floor(Math.random() * pool.length)].id;
+  }
+
+  function selectRandomPearls(count) {
+    var allPearls = [];
+    Object.keys(DB.notes).forEach(function (id) {
+      var note = DB.notes[id];
+      if (note.clinicalPearls) {
+        note.clinicalPearls.forEach(function (pearl) {
+          allPearls.push({ pearl: pearl, noteId: id, noteTitle: note.title, category: note.category });
+        });
+      }
+    });
+    // Shuffle and take count
+    for (var i = allPearls.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = allPearls[i];
+      allPearls[i] = allPearls[j];
+      allPearls[j] = tmp;
+    }
+    return allPearls.slice(0, count);
+  }
+
+  // ==================== SESSION ====================
+  function startSession() {
+    var conditionId = selectNote('Conditions');
+    var pharmId = selectNote('Pharmacology');
+    var conceptId = selectNote('Concepts');
+    var pearls = selectRandomPearls(3);
+
+    session = {
+      conditionId: conditionId,
+      pharmId: pharmId,
+      conceptId: conceptId,
+      pearls: pearls,
+      scenarioStep: 0,
+      scenarioRevealed: {},
+      ratings: {},
+      pearlIndex: 0,
+    };
+
+    renderScenario();
+    showView('scenario');
+  }
+
+  // ==================== SCENARIO RENDERING ====================
+  function renderScenario() {
+    var note = DB.notes[session.conditionId];
+    if (!note) return;
+
+    var steps = [
+      { label: 'Patient Presentation', key: 'presentation' },
+      { label: 'Differential', key: 'differential' },
+      { label: 'Pathophysiology', key: 'pathophysiology' },
+      { label: 'Diagnostics', key: 'diagnostics' },
+      { label: 'Management & Pharmacology', key: 'management' },
+      { label: 'Nursing Priorities', key: 'nursing' },
+      { label: 'Clinical Pearls', key: 'pearls' },
+    ];
+    var step = session.scenarioStep;
+
+    // Progress dots
+    var dotsHtml = steps.map(function (s, i) {
+      var cls = i < step ? 'done' : (i === step ? 'current' : '');
+      return '<div class="progress-dot ' + cls + '"></div>';
+    }).join('');
+    document.getElementById('scenario-progress').innerHTML = dotsHtml;
+
+    var card = document.getElementById('scenario-card');
+    var actions = document.getElementById('scenario-actions');
+
+    switch (step) {
+      case 0: renderPresentation(note, card, actions); break;
+      case 1: renderDifferential(note, card, actions); break;
+      case 2: renderPathophys(note, card, actions); break;
+      case 3: renderDiagnostics(note, card, actions); break;
+      case 4: renderManagement(note, card, actions); break;
+      case 5: renderNursing(note, card, actions); break;
+      case 6: renderScenarioPearls(note, card, actions); break;
+    }
+  }
+
+  function buildVignette(note) {
+    var hints = note.scenarioHints || {};
+    var signs = hints.signs || [];
+    var features = note.sections.clinicalFeatures || '';
+
+    // Build a patient presentation from the clinical features
+    var demographics = generateDemographics(note);
+    var chiefComplaint = extractChiefComplaint(note);
+    var vitals = extractVitals(hints, features);
+    var presentingFeatures = signs.slice(0, 4).map(function (s) {
+      // Clean up markdown formatting
+      return s.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').split('—')[0].split('(')[0].trim();
+    });
+
+    var vignette = demographics + '. Chief complaint: ' + chiefComplaint + '.';
+    if (vitals) vignette += ' ' + vitals;
+    if (presentingFeatures.length > 0) {
+      vignette += ' On assessment: ' + presentingFeatures.join('; ') + '.';
+    }
+    return vignette;
+  }
+
+  function generateDemographics(note) {
+    var ages = ['42', '55', '67', '73', '28', '61', '38', '81', '49', '56'];
+    var sexes = ['M', 'F'];
+    var transports = ['presents to ED', 'brought in by EMS', 'walks into triage', 'transferred from urgent care'];
+    var age = ages[Math.floor(Math.random() * ages.length)];
+    var sex = sexes[Math.floor(Math.random() * sexes.length)];
+    var transport = transports[Math.floor(Math.random() * transports.length)];
+    return age + sex + ' ' + transport;
+  }
+
+  function extractChiefComplaint(note) {
+    var title = note.title.toLowerCase();
+    // Map conditions to chief complaints
+    var complaints = {
+      'sepsis': 'fever, confusion, and weakness',
+      'stemi': 'sudden crushing chest pain radiating to left arm',
+      'stroke': 'sudden onset facial droop and left-sided weakness',
+      'pneumonia': 'productive cough, fever, and shortness of breath',
+      'heart failure': 'progressive shortness of breath and lower extremity edema',
+      'copd': 'worsening dyspnea and increased sputum production',
+      'asthma': 'acute wheezing and difficulty breathing',
+      'anaphylaxis': 'sudden swelling, hives, and difficulty breathing after exposure',
+      'pulmonary embolism': 'sudden pleuritic chest pain and dyspnea',
+      'cardiac arrest': 'witnessed collapse, unresponsive',
+      'dka': 'nausea, vomiting, abdominal pain, and fruity breath',
+      'aki': 'decreased urine output and fatigue',
+      'pancreatitis': 'severe epigastric pain radiating to back',
+      'appendicitis': 'periumbilical pain migrating to RLQ',
+      'atrial fibrillation': 'palpitations and irregular heartbeat',
+      'hypertension': 'severe headache and blurred vision',
+      'aortic': 'sudden tearing chest pain radiating to back',
+      'tamponade': 'chest pain, dyspnea, and muffled heart sounds',
+    };
+    for (var key in complaints) {
+      if (title.indexOf(key) !== -1) return complaints[key];
+    }
+    // Fallback: use definition section first sentence
+    var def = note.sections.definition || '';
+    var firstSentence = def.split('.')[0];
+    if (firstSentence.length > 10 && firstSentence.length < 100) {
+      return firstSentence.toLowerCase().replace(/^[a-z]/, function (c) { return c.toUpperCase(); });
+    }
+    return 'symptoms consistent with ' + note.title.toLowerCase();
+  }
+
+  function extractVitals(hints, features) {
+    // Look for vital signs in the text
+    var vitals = [];
+    var text = features + ' ' + (hints.signs || []).join(' ');
+    if (/bp\s*[<>]|sbp\s*[<>]|hypotens/i.test(text)) vitals.push('BP 82/48');
+    else if (/hypertens/i.test(text)) vitals.push('BP 198/112');
+    if (/tachycard|hr\s*>/i.test(text)) vitals.push('HR 118');
+    if (/tachypn|rr\s*>/i.test(text)) vitals.push('RR 28');
+    if (/fever|temp\s*>/i.test(text)) vitals.push('T 39.2C');
+    else if (/hypotherm|temp\s*</i.test(text)) vitals.push('T 35.4C');
+    if (/spo2|hypox|desat/i.test(text)) vitals.push('SpO2 88% on RA');
+    if (vitals.length > 0) return 'Vitals: ' + vitals.join(', ') + '.';
+    return '';
+  }
+
+  function renderPresentation(note, card, actions) {
+    var vignette = buildVignette(note);
+    card.innerHTML =
+      '<div class="scenario-label">Patient Presentation</div>' +
+      '<div class="vignette">' + escapeHtml(vignette) + '</div>' +
+      '<div class="scenario-prompt">Take a moment to consider this presentation.</div>' +
+      '<p class="scenario-body">What conditions are you considering? What would be your initial assessment priorities?</p>';
+    actions.innerHTML = '<button class="btn-primary" onclick="CKB.nextStep()">What\'s your assessment?</button>';
+  }
+
+  function renderDifferential(note, card, actions) {
+    var revealed = session.scenarioRevealed.differential;
+    card.innerHTML =
+      '<div class="scenario-label">Differential / Condition</div>' +
+      '<div class="scenario-prompt">What condition(s) are you considering?</div>' +
+      '<p class="scenario-body">Think about the chief complaint, vitals, and clinical features. What\'s at the top of your differential?</p>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'differential\')">' +
+        (revealed
+          ? '<strong>' + escapeHtml(note.title) + '</strong>' +
+            (note.aliases && note.aliases.length ? '<br><em style="color:var(--text-muted)">Also known as: ' + escapeHtml(note.aliases.join(', ')) + '</em>' : '') +
+            (note.system ? '<br><span style="font-size:13px;color:var(--text-muted)">System: ' + escapeHtml(note.system) + '</span>' : '') +
+            (note.edTriage ? '<br><span style="font-size:13px;color:var(--red);">' + escapeHtml(note.edTriage) + '</span>' : '') +
+            (note.sections.definition ? '<br><br>' + formatSection(note.sections.definition.split('\n').slice(0, 3).join('\n')) : '')
+          : 'Tap to reveal the condition')
+      + '</div>';
+    actions.innerHTML = revealed
+      ? renderRatingAndNext('differential')
+      : '';
+  }
+
+  function renderPathophys(note, card, actions) {
+    var revealed = session.scenarioRevealed.pathophysiology;
+    var content = note.sections.pathophysiology || note.sections.mechanism || 'No pathophysiology section available for this note.';
+    card.innerHTML =
+      '<div class="scenario-label">Pathophysiology</div>' +
+      '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
+      '<p class="scenario-body">Trace it from the underlying mechanism to the clinical presentation you saw.</p>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
+        (revealed ? formatSection(content) : 'Tap to reveal the pathophysiology')
+      + '</div>';
+    actions.innerHTML = revealed ? renderRatingAndNext('pathophysiology') : '';
+  }
+
+  function renderDiagnostics(note, card, actions) {
+    var revealed = session.scenarioRevealed.diagnostics;
+    var content = note.sections.diagnosis || 'No diagnostics section available for this note.';
+    card.innerHTML =
+      '<div class="scenario-label">Diagnostics</div>' +
+      '<div class="scenario-prompt">What are you ordering?</div>' +
+      '<p class="scenario-body">Think labs, imaging, and bedside assessments. What\'s time-critical?</p>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'diagnostics\')">' +
+        (revealed ? formatSection(content) : 'Tap to reveal diagnostics')
+      + '</div>';
+    actions.innerHTML = revealed ? renderRatingAndNext('diagnostics') : '';
+  }
+
+  function renderManagement(note, card, actions) {
+    var revealed = session.scenarioRevealed.management;
+    var content = note.sections.management || '';
+    // Add linked pharmacology notes
+    var pharmLinks = (DB.graph[session.conditionId] || []).filter(function (id) {
+      return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
+    });
+    var pharmHtml = '';
+    if (pharmLinks.length > 0 && revealed) {
+      pharmHtml = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">' +
+        '<strong style="font-size:13px;color:var(--green)">RELATED PHARMACOLOGY:</strong><br>';
+      pharmLinks.slice(0, 5).forEach(function (pid) {
+        var pn = DB.notes[pid];
+        pharmHtml += '<span class="note-link-chip" onclick="CKB.openNote(\'' + pid + '\')">' + escapeHtml(pn.title) + '</span> ';
+      });
+      pharmHtml += '</div>';
+    }
+    card.innerHTML =
+      '<div class="scenario-label">Management & Pharmacology</div>' +
+      '<div class="scenario-prompt">What\'s your treatment plan?</div>' +
+      '<p class="scenario-body">Think acute interventions, medications, and disposition.</p>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'management\')">' +
+        (revealed ? formatSection(content) + pharmHtml : 'Tap to reveal management plan')
+      + '</div>';
+    actions.innerHTML = revealed ? renderRatingAndNext('management') : '';
+  }
+
+  function renderNursing(note, card, actions) {
+    var revealed = session.scenarioRevealed.nursing;
+    var content = note.sections.nursingConsiderations || 'No nursing considerations section available.';
+    card.innerHTML =
+      '<div class="scenario-label">Nursing Priorities</div>' +
+      '<div class="scenario-prompt">What are your nursing considerations?</div>' +
+      '<p class="scenario-body">Think monitoring, assessments, medication administration, and when to escalate.</p>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'nursing\')">' +
+        (revealed ? formatSection(content) : 'Tap to reveal nursing priorities')
+      + '</div>';
+    actions.innerHTML = revealed ? renderRatingAndNext('nursing') : '';
+  }
+
+  function renderScenarioPearls(note, card, actions) {
+    var pearls = note.clinicalPearls || [];
+    var html = '<div class="scenario-label">Clinical Pearls</div>' +
+      '<div class="scenario-prompt">' + escapeHtml(note.title) + '</div>';
+    if (pearls.length > 0) {
+      pearls.forEach(function (p) {
+        html += '<div class="note-pearl">' + formatSection(p) + '</div>';
+      });
+    } else {
+      html += '<p class="scenario-body" style="color:var(--text-muted)">No clinical pearls for this note yet.</p>';
+    }
+
+    // Show related notes
+    var related = DB.graph[session.conditionId] || [];
+    if (related.length > 0) {
+      html += '<div style="margin-top:16px"><strong style="font-size:13px;color:var(--text-muted)">EXPLORE RELATED:</strong><div class="note-links">';
+      related.slice(0, 8).forEach(function (rid) {
+        if (DB.notes[rid]) {
+          html += '<button class="note-link-chip" onclick="CKB.openNote(\'' + rid + '\')">' + escapeHtml(DB.notes[rid].title) + '</button>';
+        }
+      });
+      html += '</div></div>';
+    }
+    card.innerHTML = html;
+
+    // Overall confidence rating
+    actions.innerHTML =
+      '<p style="text-align:center;font-size:14px;color:var(--text-muted);margin-bottom:8px">How confident do you feel about <strong>' + escapeHtml(note.title) + '</strong>?</p>' +
+      '<div class="rating-row">' +
+        '<button class="rating-btn green" onclick="CKB.rateScenario(\'solid\')">Solid</button>' +
+        '<button class="rating-btn amber" onclick="CKB.rateScenario(\'needs-review\')">Needs Review</button>' +
+        '<button class="rating-btn red" onclick="CKB.rateScenario(\'study-more\')">Study More</button>' +
+      '</div>';
+  }
+
+  function renderRatingAndNext(stepKey) {
+    return '<div class="rating-row">' +
+      '<button class="rating-btn green" onclick="CKB.rateStep(\'' + stepKey + '\',\'solid\')">Got it</button>' +
+      '<button class="rating-btn amber" onclick="CKB.rateStep(\'' + stepKey + '\',\'partial\')">Partially</button>' +
+      '<button class="rating-btn red" onclick="CKB.rateStep(\'' + stepKey + '\',\'missed\')">Missed it</button>' +
+    '</div>';
+  }
+
+  // ==================== PHARM FLASH ====================
+  function renderPharmFlash() {
+    var note = DB.notes[session.pharmId];
+    if (!note) { goToConceptCheck(); return; }
+
+    var card = document.getElementById('pharm-card');
+    var actions = document.getElementById('pharm-actions');
+    var revealed = session.pharmRevealed;
+
+    card.innerHTML =
+      '<div class="flash-category pharm">Pharmacology</div>' +
+      '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
+      (note.drugClass ? '<p style="color:var(--text-muted);font-size:14px;margin-bottom:12px">' + escapeHtml(note.drugClass) + '</p>' : '') +
+      '<div class="flash-question">Can you recall the mechanism of action, key drugs, and primary indications?</div>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPharm()">' +
+        (revealed
+          ? (note.sections.mechanism ? '<strong>Mechanism:</strong><br>' + formatSection(note.sections.mechanism.split('\n').slice(0, 6).join('\n')) + '<br><br>' : '') +
+            (note.sections.indications ? '<strong>Indications:</strong><br>' + formatSection(note.sections.indications.split('\n').slice(0, 8).join('\n')) + '<br><br>' : '') +
+            (note.sections.keyDrugs ? '<strong>Key Drugs:</strong><br>' + formatSection(note.sections.keyDrugs.split('\n').slice(0, 10).join('\n')) : '')
+          : 'Tap to reveal')
+      + '</div>';
+
+    actions.innerHTML = revealed
+      ? '<div class="rating-row">' +
+          '<button class="rating-btn green" onclick="CKB.ratePharm(\'solid\')">Solid</button>' +
+          '<button class="rating-btn amber" onclick="CKB.ratePharm(\'needs-review\')">Needs Review</button>' +
+          '<button class="rating-btn red" onclick="CKB.ratePharm(\'study-more\')">Study More</button>' +
+        '</div>'
+      : '';
+
+    showView('pharm');
+  }
+
+  // ==================== CONCEPT CHECK ====================
+  function goToConceptCheck() {
+    var note = DB.notes[session.conceptId];
+    if (!note) { goToPearls(); return; }
+
+    var card = document.getElementById('concept-card');
+    var actions = document.getElementById('concept-actions');
+    session.conceptRevealed = false;
+
+    renderConceptCard(note, card, actions);
+    showView('concept');
+  }
+
+  function renderConceptCard(note, card, actions) {
+    var revealed = session.conceptRevealed;
+    card.innerHTML =
+      '<div class="flash-category concept">First Principles</div>' +
+      '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
+      '<div class="flash-question">Explain this concept. How does it connect to clinical conditions you\'ve seen?</div>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
+        (revealed
+          ? formatSection((note.sections.definition || note.sections['the-core-concept'] || 'No definition available.').split('\n').slice(0, 10).join('\n'))
+          : 'Tap to reveal')
+      + '</div>';
+
+    actions.innerHTML = revealed
+      ? '<div class="rating-row">' +
+          '<button class="rating-btn green" onclick="CKB.rateConcept(\'solid\')">Solid</button>' +
+          '<button class="rating-btn amber" onclick="CKB.rateConcept(\'needs-review\')">Needs Review</button>' +
+          '<button class="rating-btn red" onclick="CKB.rateConcept(\'study-more\')">Study More</button>' +
+        '</div>'
+      : '';
+  }
+
+  // ==================== QUICK HITS (PEARLS) ====================
+  function goToPearls() {
+    session.pearlIndex = 0;
+    renderPearlCard();
+    showView('pearls');
+  }
+
+  function renderPearlCard() {
+    var pearls = session.pearls;
+    if (!pearls || session.pearlIndex >= pearls.length) {
+      finishSession();
+      return;
+    }
+    var p = pearls[session.pearlIndex];
+    var card = document.getElementById('pearl-card');
+    var actions = document.getElementById('pearl-actions');
+    var revealed = session['pearl_' + session.pearlIndex + '_revealed'];
+
+    card.innerHTML =
+      '<div class="flash-category pearl">Quick Hit ' + (session.pearlIndex + 1) + ' of ' + pearls.length + '</div>' +
+      '<div style="margin-bottom:16px">' +
+        '<div class="note-pearl">' + formatSection(p.pearl) + '</div>' +
+      '</div>' +
+      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPearl()">' +
+        (revealed
+          ? '<strong>From:</strong> ' + escapeHtml(p.noteTitle) + ' <span style="color:var(--text-muted)">(' + p.category + ')</span>' +
+            '<br><button class="note-link-chip" style="margin-top:8px" onclick="CKB.openNote(\'' + p.noteId + '\')">' +
+            'Open full note</button>'
+          : 'Tap to see which note this is from')
+      + '</div>';
+
+    actions.innerHTML = revealed
+      ? '<button class="btn-primary" onclick="CKB.nextPearl()" style="margin-top:12px">' +
+          (session.pearlIndex < pearls.length - 1 ? 'Next Pearl' : 'Finish Session') + '</button>'
+      : '';
+  }
+
+  // ==================== SESSION COMPLETE ====================
+  function finishSession() {
+    var streak = completeSessionStreak();
+    var card = document.getElementById('complete-card');
+
+    // Count today's ratings
+    var ratings = session.ratings || {};
+    var ratingCounts = { solid: 0, partial: 0, missed: 0, 'needs-review': 0, 'study-more': 0 };
+    Object.values(ratings).forEach(function (r) {
+      if (ratingCounts[r] !== undefined) ratingCounts[r]++;
+    });
+
+    var condTitle = DB.notes[session.conditionId] ? DB.notes[session.conditionId].title : '—';
+    var pharmTitle = DB.notes[session.pharmId] ? DB.notes[session.pharmId].title : '—';
+    var conceptTitle = DB.notes[session.conceptId] ? DB.notes[session.conceptId].title : '—';
+
+    card.innerHTML =
+      '<div class="complete-icon">&#10003;</div>' +
+      '<div class="complete-title">Session Complete</div>' +
+      '<div class="complete-subtitle">Great work today!</div>' +
+      '<div class="complete-stats">' +
+        '<div class="stat-row"><span class="stat-label">Case</span><span class="stat-value">' + escapeHtml(condTitle) + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Pharm Flash</span><span class="stat-value">' + escapeHtml(pharmTitle) + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Concept Check</span><span class="stat-value">' + escapeHtml(conceptTitle) + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Quick Hits</span><span class="stat-value">' + session.pearls.length + ' pearls</span></div>' +
+      '</div>' +
+      '<div class="streak-display" style="margin-bottom:20px">' +
+        '<div class="streak-number">' + streak.count + '</div>' +
+        '<div class="streak-label">day streak</div>' +
+      '</div>' +
+      '<button class="btn-primary" onclick="CKB.showView(\'home\')">Done</button>';
+
+    showView('complete');
+  }
+
+  // ==================== HOME VIEW ====================
+  function renderHome() {
+    if (!DB) return;
+
+    document.getElementById('greeting').textContent = getDailyQuip();
+
+    // Session summary
+    var totalNotes = Object.keys(DB.notes).length;
+    var seenCount = Object.keys(progress).filter(function (id) { return progress[id].lastSeen; }).length;
+    var pct = Math.round((seenCount / totalNotes) * 100);
+    document.getElementById('session-summary').textContent =
+      'You\'ve studied ' + seenCount + ' of ' + totalNotes + ' notes (' + pct + '%)';
+
+    // Button
+    var btn = document.getElementById('btn-start-session');
+    btn.onclick = startSession;
+
+    // Stats
+    var streak = getStreak();
+    var confidenceCounts = { solid: 0, 'needs-review': 0, 'study-more': 0, unseen: 0 };
+    Object.keys(DB.notes).forEach(function (id) {
+      var p = progress[id];
+      if (!p || !p.confidence) confidenceCounts.unseen++;
+      else if (confidenceCounts[p.confidence] !== undefined) confidenceCounts[p.confidence]++;
+      else confidenceCounts.unseen++;
+    });
+
+    document.getElementById('home-stats').innerHTML =
+      '<div class="card">' +
+        '<div class="stat-row"><span class="stat-label">Study streak</span><span class="stat-value">' + streak.count + ' days</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Solid</span><span class="stat-value" style="color:var(--green)">' + confidenceCounts.solid + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Needs review</span><span class="stat-value" style="color:var(--amber)">' + confidenceCounts['needs-review'] + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Study more</span><span class="stat-value" style="color:var(--red)">' + confidenceCounts['study-more'] + '</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Not yet seen</span><span class="stat-value">' + confidenceCounts.unseen + '</span></div>' +
+      '</div>';
+  }
+
+  // ==================== PROGRESS DASHBOARD ====================
+  function renderDashboard() {
+    if (!DB) return;
+    var html = '<div class="dash-title">Your Progress</div>';
+
+    // Streak
+    var streak = getStreak();
+    html += '<div class="dash-section">' +
+      '<div class="streak-display">' +
+        '<div class="streak-number">' + streak.count + '</div>' +
+        '<div class="streak-label">day study streak</div>' +
+      '</div></div>';
+
+    // Coverage by category
+    html += '<div class="dash-section"><div class="dash-section-title">Coverage by Category</div>';
+    ['Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures'].forEach(function (cat) {
+      var ids = DB.categories[cat] || [];
+      var seen = ids.filter(function (id) { return progress[id] && progress[id].lastSeen; }).length;
+      var pct = ids.length > 0 ? Math.round((seen / ids.length) * 100) : 0;
+      var color = pct > 70 ? 'green' : pct > 30 ? 'amber' : 'blue';
+      html += '<div class="progress-bar-container">' +
+        '<div class="progress-bar-label"><span>' + cat + '</span><span>' + seen + '/' + ids.length + '</span></div>' +
+        '<div class="progress-bar"><div class="progress-bar-fill ' + color + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // Confidence distribution
+    var counts = { solid: 0, 'needs-review': 0, 'study-more': 0 };
+    Object.values(progress).forEach(function (p) {
+      if (p.confidence && counts[p.confidence] !== undefined) counts[p.confidence]++;
+    });
+    html += '<div class="dash-section"><div class="dash-section-title">Confidence Distribution</div>' +
+      '<div class="confidence-grid">' +
+        '<div class="confidence-box"><div class="confidence-number" style="color:var(--green)">' + counts.solid + '</div><div class="confidence-label">Solid</div></div>' +
+        '<div class="confidence-box"><div class="confidence-number" style="color:var(--amber)">' + counts['needs-review'] + '</div><div class="confidence-label">Review</div></div>' +
+        '<div class="confidence-box"><div class="confidence-number" style="color:var(--red)">' + counts['study-more'] + '</div><div class="confidence-label">Study More</div></div>' +
+      '</div></div>';
+
+    // Overdue notes (seen but not reviewed in 7+ days)
+    var overdue = [];
+    var now = Date.now();
+    Object.keys(progress).forEach(function (id) {
+      var p = progress[id];
+      if (p.lastSeen) {
+        var daysSince = Math.floor((now - new Date(p.lastSeen).getTime()) / 86400000);
+        if (daysSince >= 7 && DB.notes[id]) {
+          overdue.push({ id: id, title: DB.notes[id].title, days: daysSince, confidence: p.confidence });
+        }
+      }
+    });
+    overdue.sort(function (a, b) { return b.days - a.days; });
+
+    if (overdue.length > 0) {
+      html += '<div class="dash-section"><div class="dash-section-title">Due for Review (' + overdue.length + ')</div>';
+      overdue.slice(0, 10).forEach(function (item) {
+        var color = item.confidence === 'study-more' ? 'var(--red)' :
+                    item.confidence === 'needs-review' ? 'var(--amber)' : 'var(--green)';
+        html += '<div class="browse-item" onclick="CKB.openNote(\'' + item.id + '\')">' +
+          '<div><div class="browse-item-title">' + escapeHtml(item.title) + '</div>' +
+          '<div class="browse-item-cat">' + item.days + ' days ago</div></div>' +
+          '<div class="browse-item-confidence" style="background:' + color + '"></div></div>';
+      });
+      html += '</div>';
+    }
+
+    document.getElementById('dashboard').innerHTML = html;
+  }
+
+  // ==================== BROWSE VIEW ====================
+  function renderBrowse() {
+    if (!DB) return;
+
+    // Controls
+    var controlsHtml = '<input type="text" class="browse-search" id="browse-search-input" placeholder="Search notes..." value="' + escapeHtml(browseSearch) + '">' +
+      '<div class="browse-filters">';
+    ['All', 'Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures'].forEach(function (f) {
+      controlsHtml += '<button class="filter-chip ' + (browseFilter === f ? 'active' : '') + '" onclick="CKB.setBrowseFilter(\'' + f + '\')">' + f + '</button>';
+    });
+    controlsHtml += '</div>';
+    document.getElementById('browse-controls').innerHTML = controlsHtml;
+
+    // Add search listener
+    setTimeout(function () {
+      var input = document.getElementById('browse-search-input');
+      if (input) {
+        input.oninput = function () {
+          browseSearch = input.value;
+          renderBrowseList();
+        };
+      }
+    }, 0);
+
+    renderBrowseList();
+  }
+
+  function renderBrowseList() {
+    var listHtml = '';
+    var notes = Object.values(DB.notes);
+
+    // Filter
+    if (browseFilter !== 'All') {
+      notes = notes.filter(function (n) { return n.category === browseFilter; });
+    }
+    if (browseSearch) {
+      var q = browseSearch.toLowerCase();
+      notes = notes.filter(function (n) {
+        return n.title.toLowerCase().indexOf(q) !== -1 ||
+          (n.aliases && n.aliases.some(function (a) { return a.toLowerCase().indexOf(q) !== -1; }));
+      });
+    }
+
+    // Sort alphabetically
+    notes.sort(function (a, b) { return a.title.localeCompare(b.title); });
+
+    notes.forEach(function (note) {
+      var p = progress[note.id] || {};
+      var color = !p.confidence ? 'var(--border)' :
+                  p.confidence === 'solid' ? 'var(--green)' :
+                  p.confidence === 'needs-review' ? 'var(--amber)' : 'var(--red)';
+      listHtml += '<div class="browse-item" onclick="CKB.openNote(\'' + note.id + '\')">' +
+        '<div><div class="browse-item-title">' + escapeHtml(note.title) + '</div>' +
+        '<div class="browse-item-cat">' + note.category + '</div></div>' +
+        '<div class="browse-item-confidence" style="background:' + color + '"></div></div>';
+    });
+
+    if (notes.length === 0) {
+      listHtml = '<p style="text-align:center;color:var(--text-muted);padding:20px">No notes found</p>';
+    }
+
+    document.getElementById('browse-list').innerHTML = listHtml;
+  }
+
+  // ==================== NOTE DETAIL VIEW ====================
+  function openNote(noteId) {
+    var note = DB.notes[noteId];
+    if (!note) return;
+
+    var html = '<button class="note-back" onclick="CKB.goBack()">&larr; Back</button>';
+    html += '<div class="note-title">' + escapeHtml(note.title) + '</div>';
+
+    var metaParts = [note.category];
+    if (note.system) metaParts.push(note.system);
+    if (note.drugClass) metaParts.push(note.drugClass);
+    if (note.edTriage) metaParts.push(note.edTriage);
+    html += '<div class="note-meta">' + escapeHtml(metaParts.join(' \u00B7 ')) + '</div>';
+
+    // Sections
+    var sectionOrder = ['definition', 'epidemiology', 'pathophysiology', 'mechanism',
+      'clinicalFeatures', 'diagnosis', 'indications', 'keyDrugs', 'receptorProfiles',
+      'management', 'adverseEffects', 'contraindications', 'pharmacokinetics',
+      'nursingConsiderations', 'keyPoints', 'anatomy', 'physiology', 'assessment'];
+    var sectionLabels = {
+      definition: 'Definition', epidemiology: 'Epidemiology', pathophysiology: 'Pathophysiology',
+      mechanism: 'Mechanism of Action', clinicalFeatures: 'Clinical Features', diagnosis: 'Diagnosis',
+      indications: 'Indications', keyDrugs: 'Key Drugs', receptorProfiles: 'Receptor Profiles',
+      management: 'Management', adverseEffects: 'Adverse Effects', contraindications: 'Contraindications',
+      pharmacokinetics: 'Pharmacokinetics', nursingConsiderations: 'Nursing Considerations',
+      keyPoints: 'Key Points', anatomy: 'Anatomy', physiology: 'Physiology', assessment: 'Assessment'
+    };
+
+    // Show ordered sections first, then any remaining
+    var shown = new Set();
+    sectionOrder.forEach(function (key) {
+      if (note.sections[key]) {
+        html += '<div class="note-section">' +
+          '<div class="note-section-title">' + (sectionLabels[key] || key) + '</div>' +
+          '<div class="note-section-body">' + formatSection(note.sections[key]) + '</div></div>';
+        shown.add(key);
+      }
+    });
+    Object.keys(note.sections).forEach(function (key) {
+      if (!shown.has(key)) {
+        html += '<div class="note-section">' +
+          '<div class="note-section-title">' + key.replace(/-/g, ' ') + '</div>' +
+          '<div class="note-section-body">' + formatSection(note.sections[key]) + '</div></div>';
+      }
+    });
+
+    // Clinical Pearls
+    if (note.clinicalPearls && note.clinicalPearls.length > 0) {
+      html += '<div class="note-section"><div class="note-section-title">Clinical Pearls</div>';
+      note.clinicalPearls.forEach(function (p) {
+        html += '<div class="note-pearl">' + formatSection(p) + '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Related notes
+    var related = DB.graph[noteId] || [];
+    if (related.length > 0) {
+      html += '<div class="note-section"><div class="note-section-title">Related Notes</div><div class="note-links">';
+      related.forEach(function (rid) {
+        if (DB.notes[rid]) {
+          html += '<button class="note-link-chip" onclick="CKB.openNote(\'' + rid + '\')">' + escapeHtml(DB.notes[rid].title) + '</button>';
+        }
+      });
+      html += '</div></div>';
+    }
+
+    document.getElementById('note-content').innerHTML = html;
+    showView('note');
+    // Scroll to top
+    document.getElementById('main').scrollTop = 0;
+  }
+
+  // ==================== DAILY QUIPS ====================
+  var QUIPS = [
+    "Your patients don't know how lucky they are.",
+    "That lactate isn't going to trend itself.",
+    "Somewhere, a med student is struggling with what you already know.",
+    "You didn't survive nursing school to not know this stuff.",
+    "15 minutes now, fewer blank stares at the whiteboard later.",
+    "Be the nurse the night shift brags about.",
+    "Every expert was once a beginner who didn't quit.",
+    "The only bad study session is the one you skipped.",
+    "Future you is going to crush that next code blue.",
+    "You're not studying. You're sharpening weapons.",
+    "Somewhere a attending is about to be impressed.",
+    "Your brain called. It wants more pathophys.",
+    "The raccoon believes in you. Don't let the raccoon down.",
+    "One more session closer to knowing it cold.",
+    "Think of this as pre-gaming for your next shift.",
+    "Your stethoscope is judging you. Better study.",
+    "Neurons that fire together wire together. Let's go.",
+    "You know more than you think. Let's prove it.",
+    "The ED doesn't care what you forgot. So don't forget it.",
+    "Building clinical intuition, one scenario at a time.",
+    "You showed up. That's already more than most.",
+    "Your knowledge base has 234 notes. Your brain should too.",
+    "Competence is a habit, not a talent.",
+    "Less panic at the bedside starts right here.",
+    "Today's session is tomorrow's instinct.",
+    "Real learning feels uncomfortable. Lean in.",
+    "You're not just memorizing. You're becoming dangerous.",
+    "The sepsis clock is always ticking. Are you ready?",
+    "Pharmacology won't learn itself. Unfortunately.",
+    "Channel the energy of a nurse who just got a perfect IV stick.",
+  ];
+
+  function getDailyQuip() {
+    // Use the date as seed so the quip changes daily but stays consistent throughout the day
+    var today = new Date();
+    var seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    return QUIPS[seed % QUIPS.length];
+  }
+
+  // ==================== HELPERS ====================
+  function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+  }
+
+  function formatSection(text) {
+    if (!text) return '';
+    // Escape HTML first
+    var escaped = escapeHtml(text);
+    // Convert markdown bold
+    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Convert markdown italic
+    escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Convert markdown tables to simple display
+    if (escaped.indexOf('|') !== -1) {
+      var lines = escaped.split('\n');
+      var inTable = false;
+      var tableHtml = '';
+      var result = [];
+      lines.forEach(function (line) {
+        if (line.trim().match(/^\|.*\|$/)) {
+          if (line.trim().match(/^\|[\s-|]+\|$/)) return; // separator row
+          if (!inTable) {
+            inTable = true;
+            tableHtml = '<table style="width:100%;font-size:13px;border-collapse:collapse;margin:8px 0">';
+          }
+          var cells = line.split('|').filter(function (c) { return c.trim(); });
+          tableHtml += '<tr>';
+          cells.forEach(function (c) {
+            tableHtml += '<td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + c.trim() + '</td>';
+          });
+          tableHtml += '</tr>';
+        } else {
+          if (inTable) {
+            tableHtml += '</table>';
+            result.push(tableHtml);
+            inTable = false;
+            tableHtml = '';
+          }
+          result.push(line);
+        }
+      });
+      if (inTable) {
+        tableHtml += '</table>';
+        result.push(tableHtml);
+      }
+      escaped = result.join('\n');
+    }
+    // Convert newlines to breaks
+    escaped = escaped.replace(/\n/g, '<br>');
+    return escaped;
+  }
+
+  // ==================== PUBLIC API ====================
+  window.CKB = {
+    showView: showView,
+    openNote: openNote,
+    goBack: function () {
+      showView(previousView || 'home');
+    },
+    setBrowseFilter: function (f) {
+      browseFilter = f;
+      renderBrowse();
+    },
+    reveal: function (key) {
+      if (session.scenarioRevealed[key]) return;
+      session.scenarioRevealed[key] = true;
+      renderScenario();
+    },
+    revealPharm: function () {
+      session.pharmRevealed = true;
+      renderPharmFlash();
+    },
+    revealConcept: function () {
+      session.conceptRevealed = true;
+      var note = DB.notes[session.conceptId];
+      var card = document.getElementById('concept-card');
+      var actions = document.getElementById('concept-actions');
+      renderConceptCard(note, card, actions);
+    },
+    revealPearl: function () {
+      session['pearl_' + session.pearlIndex + '_revealed'] = true;
+      renderPearlCard();
+    },
+    rateStep: function (stepKey, rating) {
+      session.ratings[stepKey] = rating;
+      session.scenarioStep++;
+      if (session.scenarioStep <= 6) {
+        renderScenario();
+        document.getElementById('main').scrollTop = 0;
+      }
+    },
+    rateScenario: function (confidence) {
+      recordView(session.conditionId, confidence);
+      // Move to pharm flash
+      session.pharmRevealed = false;
+      renderPharmFlash();
+    },
+    ratePharm: function (confidence) {
+      recordView(session.pharmId, confidence);
+      goToConceptCheck();
+    },
+    rateConcept: function (confidence) {
+      recordView(session.conceptId, confidence);
+      goToPearls();
+    },
+    nextPearl: function () {
+      session.pearlIndex++;
+      if (session.pearlIndex >= session.pearls.length) {
+        finishSession();
+      } else {
+        renderPearlCard();
+        document.getElementById('main').scrollTop = 0;
+      }
+    },
+    nextStep: function () {
+      session.scenarioStep++;
+      renderScenario();
+      document.getElementById('main').scrollTop = 0;
+    },
+  };
+
+  // ==================== BOOT ====================
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
