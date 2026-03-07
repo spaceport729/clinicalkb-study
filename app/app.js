@@ -22,31 +22,33 @@
   // Many notes use non-standard section keys (e.g. "ed-management" instead of "management",
   // "pathophysiology-how-hyperglycemia-damages-nerves" instead of "pathophysiology").
   // This helper finds the best matching section content for a given key.
-  function findSection(note, key) {
+  // It prioritizes ED-specific sections (e.g. "ed-management" over "management")
+  // so the app shows acute/emergency content rather than screening/prevention.
+  function findSectionMatch(note, key) {
     if (!note || !note.sections) return '';
-    // 1. Exact match
-    if (note.sections[key]) return note.sections[key];
-    // 2. Try key with common prefixes/suffixes
     var keys = Object.keys(note.sections);
-    // Find keys that start with the target (e.g. "management" matches "management-principles-all-subtypes")
+    // 1. Check for ED-specific version first (e.g. "ed-management", "ed-management-stepwise-approach")
+    var edKey = 'ed-' + key;
+    var edMatch = keys.filter(function (k) { return k.indexOf(edKey) === 0; });
+    if (edMatch.length > 0) return edMatch[0];
+    // 2. Exact match
+    if (note.sections[key]) return key;
+    // 3. Keys that start with the target
     var startsWith = keys.filter(function (k) { return k.indexOf(key) === 0; });
-    if (startsWith.length > 0) return note.sections[startsWith[0]];
-    // Find keys that contain the target (e.g. "ed-management" contains "management")
+    if (startsWith.length > 0) return startsWith[0];
+    // 4. Keys that contain the target (e.g. "ed-management" contains "management")
     var contains = keys.filter(function (k) { return k.indexOf(key) !== -1; });
-    if (contains.length > 0) return note.sections[contains[0]];
+    if (contains.length > 0) return contains[0];
     return '';
   }
 
-  // Also returns the actual key name used, for deep-linking
+  function findSection(note, key) {
+    var matched = findSectionMatch(note, key);
+    return matched ? note.sections[matched] : '';
+  }
+
   function findSectionKey(note, key) {
-    if (!note || !note.sections) return key;
-    if (note.sections[key]) return key;
-    var keys = Object.keys(note.sections);
-    var startsWith = keys.filter(function (k) { return k.indexOf(key) === 0; });
-    if (startsWith.length > 0) return startsWith[0];
-    var contains = keys.filter(function (k) { return k.indexOf(key) !== -1; });
-    if (contains.length > 0) return contains[0];
-    return key;
+    return findSectionMatch(note, key) || key;
   }
 
   // ==================== INIT ====================
@@ -182,6 +184,10 @@
       note: 'Note Detail'
     };
     document.getElementById('topbar-title').textContent = titles[viewName] || 'ClinicalKB Study';
+
+    // Show/hide topbar back button for note view
+    var backBtn = document.getElementById('topbar-back');
+    if (backBtn) backBtn.style.display = (viewName === 'note') ? 'block' : 'none';
 
     // Render views
     if (viewName === 'home') renderHome();
@@ -712,9 +718,29 @@
     actions.innerHTML = (revealed ? renderRatingAndNext('diagnostics') : '') + renderStepNav(true, revealed);
   }
 
+  // Extract the most ED-relevant portion of a management section.
+  // Many notes bury acute management after screening/surveillance subsections.
+  function extractAcuteManagement(text) {
+    if (!text) return text;
+    // Look for acute/emergency subsection headers
+    var acutePatterns = [
+      /^###?\s*(acute|emergency|ed |ruptured|immediate|initial|resuscitation|stabilization|critical)/im,
+      /^###?\s*(pharmacotherapy|treatment|intervention)/im
+    ];
+    for (var i = 0; i < acutePatterns.length; i++) {
+      var match = acutePatterns[i].exec(text);
+      if (match && match.index > 100) {
+        // Found an acute section buried in the content — start from there
+        return text.substring(match.index);
+      }
+    }
+    return text;
+  }
+
   function renderManagement(note, card, actions) {
     var revealed = session.scenarioRevealed.management;
-    var content = findSection(note, 'management') || '';
+    var rawContent = findSection(note, 'management') || '';
+    var content = extractAcuteManagement(rawContent);
     var sKey = findSectionKey(note, 'management');
     // Add linked pharmacology notes
     var pharmLinks = (DB.graph[session.conditionId] || []).filter(function (id) {
@@ -904,22 +930,49 @@
     showView('concept');
   }
 
+  // Find the best summary content for a concept note
+  function getConceptSummary(note) {
+    // 1. Try standard sections
+    var content = findSection(note, 'definition') || findSection(note, 'the-core-concept') || findSection(note, 'key-principles');
+    if (content) {
+      var key = findSectionKey(note, 'definition');
+      if (!note.sections[key]) key = findSectionKey(note, 'the-core-concept');
+      if (!note.sections[key]) key = findSectionKey(note, 'key-principles');
+      return { content: content, key: key };
+    }
+    // 2. Fall back to the first section of the note
+    var keys = Object.keys(note.sections || {});
+    if (keys.length > 0) {
+      return { content: note.sections[keys[0]], key: keys[0] };
+    }
+    return { content: 'No content available for this concept.', key: '' };
+  }
+
   function renderConceptCard(note, card, actions) {
     var revealed = session.conceptRevealed;
+    var revealHtml = '';
+    if (revealed) {
+      var summary = getConceptSummary(note);
+      revealHtml = summarizeSection(summary.content, 6, session.conceptId, summary.key);
+      // Add clinical pearls as the quick-hit takeaways
+      var pearls = note.clinicalPearls || [];
+      if (pearls.length > 0) {
+        revealHtml += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">' +
+          '<strong style="font-size:13px;color:var(--accent)">KEY TAKEAWAYS:</strong>';
+        pearls.slice(0, 4).forEach(function (p) {
+          revealHtml += '<div class="note-pearl" style="margin-top:6px">' + formatSection(p) + '</div>';
+        });
+        revealHtml += '</div>';
+      }
+      // Link to full note
+      revealHtml += '<br><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Open full note &rarr;</button>';
+    }
     card.innerHTML =
       '<div class="flash-category concept">First Principles</div>' +
       '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
       '<div class="flash-question">Explain this concept. How does it connect to clinical conditions you\'ve seen?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
-        (revealed
-          ? (function() {
-              var conceptContent = findSection(note, 'definition') || findSection(note, 'the-core-concept') || findSection(note, 'key-principles') || 'No definition available.';
-              var conceptKey = findSectionKey(note, 'definition');
-              if (!note.sections[conceptKey]) conceptKey = findSectionKey(note, 'the-core-concept');
-              if (!note.sections[conceptKey]) conceptKey = findSectionKey(note, 'key-principles');
-              return summarizeSection(conceptContent, 10, session.conceptId, conceptKey);
-            })()
-          : 'Tap to reveal')
+        (revealed ? revealHtml : 'Tap to reveal')
       + '</div>';
 
     actions.innerHTML = (revealed
@@ -1182,8 +1235,7 @@
     var note = DB.notes[noteId];
     if (!note) return;
 
-    var html = '<button class="note-back" onclick="CKB.goBack()">&larr; Back</button>';
-    html += '<div class="note-title">' + escapeHtml(note.title) + '</div>';
+    var html = '<div class="note-title">' + escapeHtml(note.title) + '</div>';
 
     var metaParts = [note.category];
     if (note.system) metaParts.push(note.system);

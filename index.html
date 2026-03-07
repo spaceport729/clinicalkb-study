@@ -15,7 +15,10 @@
   <div id="app">
     <!-- Top bar -->
     <header id="topbar">
-      <h1 id="topbar-title">ClinicalKB Study</h1>
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <button id="topbar-back" onclick="CKB.goBack()" style="display:none" aria-label="Go back">&larr;</button>
+        <h1 id="topbar-title" style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ClinicalKB Study</h1>
+      </div>
       <button id="dark-toggle" aria-label="Toggle dark mode">
         <span id="dark-icon">&#9790;</span>
       </button>
