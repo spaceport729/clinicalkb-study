@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>ClinicalKB Study</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar -->
+    <header id="topbar">
+      <h1 id="topbar-title">ClinicalKB Study</h1>
+      <button id="dark-toggle" aria-label="Toggle dark mode">
+        <span id="dark-icon">&#9790;</span>
+      </button>
+    </header>
+
+    <!-- Views -->
+    <main id="main">
+      <!-- Home / Today's Session -->
+      <div id="view-home" class="view active">
+        <div class="home-hero">
+          <div class="greeting" id="greeting"></div>
+          <div class="session-summary" id="session-summary"></div>
+        </div>
+        <button class="btn-primary btn-large" id="btn-start-session">Start Today's Session</button>
+        <div class="home-stats" id="home-stats"></div>
+      </div>
+
+      <!-- Scenario View -->
+      <div id="view-scenario" class="view">
+        <div class="scenario-progress" id="scenario-progress"></div>
+        <div class="scenario-card" id="scenario-card"></div>
+        <div class="scenario-actions" id="scenario-actions"></div>
+      </div>
+
+      <!-- Pharm Flash View -->
+      <div id="view-pharm" class="view">
+        <div class="flash-card" id="pharm-card"></div>
+        <div class="flash-actions" id="pharm-actions"></div>
+      </div>
+
+      <!-- Concept Check View -->
+      <div id="view-concept" class="view">
+        <div class="flash-card" id="concept-card"></div>
+        <div class="flash-actions" id="concept-actions"></div>
+      </div>
+
+      <!-- Quick Hits (Clinical Pearls) -->
+      <div id="view-pearls" class="view">
+        <div class="flash-card" id="pearl-card"></div>
+        <div class="flash-actions" id="pearl-actions"></div>
+      </div>
+
+      <!-- Session Complete -->
+      <div id="view-complete" class="view">
+        <div class="complete-card" id="complete-card"></div>
+      </div>
+
+      <!-- Progress Dashboard -->
+      <div id="view-progress" class="view">
+        <div class="dashboard" id="dashboard"></div>
+      </div>
+
+      <!-- Browse / Explore -->
+      <div id="view-browse" class="view">
+        <div class="browse-controls" id="browse-controls"></div>
+        <div class="browse-list" id="browse-list"></div>
+      </div>
+
+      <!-- Note Detail View -->
+      <div id="view-note" class="view">
+        <div class="note-content" id="note-content"></div>
+      </div>
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav id="navbar">
+      <button class="nav-btn active" data-view="home">
+        <span class="nav-icon">&#9733;</span>
+        <span class="nav-label">Today</span>
+      </button>
+      <button class="nav-btn" data-view="browse">
+        <span class="nav-icon">&#128218;</span>
+        <span class="nav-label">Browse</span>
+      </button>
+      <button class="nav-btn" data-view="progress">
+        <span class="nav-icon">&#128200;</span>
+        <span class="nav-label">Progress</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
