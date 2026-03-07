@@ -271,22 +271,73 @@
   }
 
   // ==================== SESSION ====================
-  function startSession() {
-    var conditionId = selectNote('Conditions');
-    var pharmId = selectNote('Pharmacology');
-    var conceptId = selectNote('Concepts');
-    var pearls = selectRandomPearls(3);
+  function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
 
-    session = {
-      conditionId: conditionId,
-      pharmId: pharmId,
-      conceptId: conceptId,
-      pearls: pearls,
-      scenarioStep: 0,
-      scenarioRevealed: {},
-      ratings: {},
-      pearlIndex: 0,
-    };
+  function saveSession() {
+    if (!session) return;
+    try {
+      var data = {
+        date: getTodayStr(),
+        conditionId: session.conditionId,
+        pharmId: session.pharmId,
+        conceptId: session.conceptId,
+        pearls: session.pearls,
+        scenarioStep: session.scenarioStep,
+        scenarioRevealed: session.scenarioRevealed,
+        ratings: session.ratings,
+        pearlIndex: session.pearlIndex,
+        pharmRevealed: session.pharmRevealed || false,
+        conceptRevealed: session.conceptRevealed || false,
+        differential: session.differential || null,
+      };
+      // Also save any pearl reveal states
+      for (var k in session) {
+        if (k.indexOf('pearl_') === 0 && k.indexOf('_revealed') !== -1) {
+          data[k] = session[k];
+        }
+      }
+      localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    } catch (e) { /* ignore */ }
+  }
+
+  function loadSavedSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      // Only restore if it's from today
+      if (data.date !== getTodayStr()) return null;
+      // Verify the notes still exist in the DB
+      if (!DB.notes[data.conditionId] || !DB.notes[data.pharmId]) return null;
+      return data;
+    } catch (e) { return null; }
+  }
+
+  function startSession() {
+    // Try to resume today's session first
+    var saved = loadSavedSession();
+    if (saved) {
+      session = saved;
+    } else {
+      var conditionId = selectNote('Conditions');
+      var pharmId = selectNote('Pharmacology');
+      var conceptId = selectNote('Concepts');
+      var pearls = selectRandomPearls(3);
+
+      session = {
+        conditionId: conditionId,
+        pharmId: pharmId,
+        conceptId: conceptId,
+        pearls: pearls,
+        scenarioStep: 0,
+        scenarioRevealed: {},
+        ratings: {},
+        pearlIndex: 0,
+      };
+      saveSession();
+    }
 
     renderScenario();
     showView('scenario');
@@ -1326,14 +1377,17 @@
     reveal: function (key) {
       if (session.scenarioRevealed[key]) return;
       session.scenarioRevealed[key] = true;
+      saveSession();
       renderScenario();
     },
     revealPharm: function () {
       session.pharmRevealed = true;
+      saveSession();
       renderPharmFlash();
     },
     revealConcept: function () {
       session.conceptRevealed = true;
+      saveSession();
       var note = DB.notes[session.conceptId];
       var card = document.getElementById('concept-card');
       var actions = document.getElementById('concept-actions');
@@ -1341,11 +1395,13 @@
     },
     revealPearl: function () {
       session['pearl_' + session.pearlIndex + '_revealed'] = true;
+      saveSession();
       renderPearlCard();
     },
     rateStep: function (stepKey, rating) {
       session.ratings[stepKey] = rating;
       session.scenarioStep++;
+      saveSession();
       if (session.scenarioStep <= 6) {
         renderScenario();
         document.getElementById('main').scrollTop = 0;
@@ -1355,18 +1411,22 @@
       recordView(session.conditionId, confidence);
       // Move to pharm flash
       session.pharmRevealed = false;
+      saveSession();
       renderPharmFlash();
     },
     ratePharm: function (confidence) {
       recordView(session.pharmId, confidence);
+      saveSession();
       goToConceptCheck();
     },
     rateConcept: function (confidence) {
       recordView(session.conceptId, confidence);
+      saveSession();
       goToPearls();
     },
     nextPearl: function () {
       session.pearlIndex++;
+      saveSession();
       if (session.pearlIndex >= session.pearls.length) {
         finishSession();
       } else {
@@ -1376,12 +1436,14 @@
     },
     nextStep: function () {
       session.scenarioStep++;
+      saveSession();
       renderScenario();
       document.getElementById('main').scrollTop = 0;
     },
     prevStep: function () {
       if (session.scenarioStep > 0) {
         session.scenarioStep--;
+        saveSession();
         renderScenario();
         document.getElementById('main').scrollTop = 0;
       }
