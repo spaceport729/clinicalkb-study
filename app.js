@@ -749,7 +749,7 @@
         // Parse out concept names from the bridge (they appear before the em-dash)
         revealHtml += '<div style="padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border);margin-bottom:14px">' +
           '<strong style="font-size:13px;color:var(--accent)">THE BIG PICTURE:</strong>' +
-          '<p style="margin-top:6px;font-size:15px;line-height:1.6">' + formatSection(bridge) + '</p>' +
+          '<div style="margin-top:6px;font-size:15px;line-height:1.6">' + formatSection(bridge) + '</div>' +
           '</div>';
       }
       // Then show a shorter summary of the detailed pathophysiology
@@ -1482,50 +1482,139 @@
 
   function formatSection(text) {
     if (!text) return '';
-    // Escape HTML first
-    var escaped = escapeHtml(text);
-    // Convert markdown bold
-    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Convert markdown italic
-    escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    // Convert markdown tables to simple display
-    if (escaped.indexOf('|') !== -1) {
-      var lines = escaped.split('\n');
-      var inTable = false;
-      var tableHtml = '';
-      var result = [];
-      lines.forEach(function (line) {
-        if (line.trim().match(/^\|.*\|$/)) {
-          if (line.trim().match(/^\|[\s-|]+\|$/)) return; // separator row
-          if (!inTable) {
-            inTable = true;
-            tableHtml = '<table style="width:100%;font-size:13px;border-collapse:collapse;margin:8px 0">';
-          }
-          var cells = line.split('|').filter(function (c) { return c.trim(); });
-          tableHtml += '<tr>';
-          cells.forEach(function (c) {
-            tableHtml += '<td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + c.trim() + '</td>';
-          });
-          tableHtml += '</tr>';
-        } else {
-          if (inTable) {
-            tableHtml += '</table>';
-            result.push(tableHtml);
-            inTable = false;
-            tableHtml = '';
-          }
-          result.push(line);
-        }
-      });
-      if (inTable) {
-        tableHtml += '</table>';
-        result.push(tableHtml);
-      }
-      escaped = result.join('\n');
+    var lines = text.split('\n');
+    var out = [];
+    var i = 0;
+
+    // Format inline markdown (bold, italic, code) with HTML-escaping
+    function fmt(s) {
+      s = escapeHtml(s);
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
+      return s;
     }
-    // Convert newlines to breaks
-    escaped = escaped.replace(/\n/g, '<br>');
-    return escaped;
+
+    while (i < lines.length) {
+      var line = lines[i];
+      var trimmed = line.trim();
+
+      // Skip empty lines
+      if (trimmed === '') { i++; continue; }
+
+      // Horizontal rule
+      if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+        out.push('<hr class="md-hr">');
+        i++; continue;
+      }
+
+      // H3 heading
+      if (trimmed.startsWith('### ')) {
+        out.push('<h4 class="md-h3">' + fmt(trimmed.slice(4)) + '</h4>');
+        i++; continue;
+      }
+      // H4 heading
+      if (trimmed.startsWith('#### ')) {
+        out.push('<h5 class="md-h4">' + fmt(trimmed.slice(5)) + '</h5>');
+        i++; continue;
+      }
+
+      // Blockquote — collect consecutive > lines
+      if (trimmed.startsWith('> ')) {
+        var bqLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('> ')) {
+          bqLines.push(fmt(lines[i].trim().slice(2)));
+          i++;
+        }
+        out.push('<blockquote class="md-bq">' + bqLines.join('<br>') + '</blockquote>');
+        continue;
+      }
+
+      // Table — collect consecutive | rows
+      if (trimmed.match(/^\|.*\|$/)) {
+        var tableRows = [];
+        var pastSep = false;
+        while (i < lines.length && lines[i].trim().match(/^\|.*\|$/)) {
+          var row = lines[i].trim();
+          if (row.match(/^\|[\s\-:|]+\|$/)) { pastSep = true; i++; continue; }
+          var cells = row.split('|').filter(function (c) { return c.trim() !== ''; });
+          var tag = !pastSep ? 'th' : 'td';
+          var tr = '<tr>';
+          cells.forEach(function (c) { tr += '<' + tag + '>' + fmt(c.trim()) + '</' + tag + '>'; });
+          tr += '</tr>';
+          tableRows.push(tr);
+          i++;
+        }
+        out.push('<table class="md-table">' + tableRows.join('') + '</table>');
+        continue;
+      }
+
+      // Bullet list (- or *) — collect consecutive bullet lines
+      if (trimmed.match(/^[-*]\s/)) {
+        var items = [];
+        while (i < lines.length) {
+          var bl = lines[i];
+          var bt = bl.trim();
+          if (bt === '') break;
+          var indent = bl.search(/\S/);
+          var bm = bt.match(/^[-*]\s+(.*)/);
+          if (bm) {
+            items.push({ depth: indent >= 2 ? 1 : 0, html: fmt(bm[1]) });
+          } else if (indent >= 2 && items.length > 0) {
+            // Continuation of previous bullet
+            items[items.length - 1].html += ' ' + fmt(bt);
+          } else {
+            break;
+          }
+          i++;
+        }
+        var ul = '<ul class="md-ul">';
+        var inSub = false;
+        items.forEach(function (item) {
+          if (item.depth > 0 && !inSub) { ul += '<li><ul class="md-ul-nested">'; inSub = true; }
+          else if (item.depth === 0 && inSub) { ul += '</ul></li>'; inSub = false; }
+          ul += '<li>' + item.html + '</li>';
+        });
+        if (inSub) ul += '</ul></li>';
+        ul += '</ul>';
+        out.push(ul);
+        continue;
+      }
+
+      // Numbered list — collect consecutive numbered lines
+      if (trimmed.match(/^\d+\.\s/)) {
+        var ol = '<ol class="md-ol">';
+        while (i < lines.length) {
+          var nl = lines[i];
+          var nt = nl.trim();
+          if (nt === '') break;
+          var nm = nt.match(/^\d+\.\s+(.*)/);
+          if (nm) {
+            ol += '<li>' + fmt(nm[1]) + '</li>';
+          } else if (nl.search(/\S/) >= 2) {
+            // Sub-bullet inside numbered list
+            var subBm = nt.match(/^[-*]\s+(.*)/);
+            if (subBm) {
+              ol += '<ul class="md-ul-nested"><li>' + fmt(subBm[1]) + '</li></ul>';
+            } else {
+              break;
+            }
+          } else {
+            break;
+          }
+          i++;
+        }
+        ol += '</ol>';
+        out.push(ol);
+        continue;
+      }
+
+      // Regular paragraph text
+      out.push('<p class="md-p">' + fmt(trimmed) + '</p>');
+      i++;
+    }
+
+    return out.join('');
   }
 
   // ==================== PUBLIC API ====================

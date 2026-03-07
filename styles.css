@@ -306,6 +306,8 @@ body {
   text-align: left;
   cursor: default;
   color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .scenario-actions {
@@ -612,11 +614,27 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .note-section-body {
-  font-size: 16px;
-  line-height: 1.65;
-  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
 }
 .note-section-body strong { font-weight: 600; }
+
+/* Markdown rendering classes */
+.md-h3 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; color: var(--text); letter-spacing: 0.01em; }
+.md-h4 { font-size: 14px; font-weight: 600; margin: 12px 0 4px; color: var(--text-muted); }
+.md-hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.md-bq { border-left: 3px solid var(--accent); padding: 8px 12px; margin: 10px 0; color: var(--text-muted); font-style: italic; background: var(--bg-card-alt, rgba(0,0,0,0.02)); border-radius: 0 6px 6px 0; }
+.md-ul, .md-ol { margin: 6px 0; padding-left: 22px; }
+.md-ul li, .md-ol li { margin-bottom: 5px; line-height: 1.55; }
+.md-ul-nested { margin: 4px 0 4px 0; padding-left: 18px; list-style-type: circle; }
+.md-ul-nested li { margin-bottom: 3px; }
+.md-table { width: 100%; font-size: 13px; border-collapse: collapse; margin: 10px 0; }
+.md-table th { padding: 6px 10px; border-bottom: 2px solid var(--border); text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+.md-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); }
+.md-table tr:last-child td { border-bottom: none; }
+.md-p { margin: 6px 0; line-height: 1.6; }
+.md-p:first-child { margin-top: 0; }
+.md-code { background: var(--bg-card-alt, rgba(0,0,0,0.05)); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; font-family: monospace; }
 
 .note-pearl {
   background: var(--bg-card-alt);
