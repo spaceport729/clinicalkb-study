@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clinicalkb-v1';
+const CACHE_NAME = 'clinicalkb-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -26,24 +26,24 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: cache-first, fallback to network
+// Fetch: network-first, fallback to cache (so updates always come through)
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        // Cache new successful requests
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      });
-    }).catch(() => {
-      // Offline fallback
-      if (event.request.destination === 'document') {
-        return caches.match('./index.html');
+    fetch(event.request).then(response => {
+      // Update cache with fresh response
+      if (response.ok && event.request.method === 'GET') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
       }
+      return response;
+    }).catch(() => {
+      // Offline: serve from cache
+      return caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        if (event.request.destination === 'document') {
+          return caches.match('./index.html');
+        }
+      });
     })
   );
 });
