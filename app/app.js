@@ -955,56 +955,78 @@
     showView('concept');
   }
 
-  // Find the best summary content for a concept note
-  function getConceptSummary(note) {
-    // 1. Try standard sections
-    var content = findSection(note, 'definition') || findSection(note, 'the-core-concept') || findSection(note, 'key-principles');
-    if (content) {
-      var key = findSectionKey(note, 'definition');
-      if (!note.sections[key]) key = findSectionKey(note, 'the-core-concept');
-      if (!note.sections[key]) key = findSectionKey(note, 'key-principles');
-      return { content: content, key: key };
-    }
-    // 2. Fall back to the first section of the note
-    var keys = Object.keys(note.sections || {});
-    if (keys.length > 0) {
-      return { content: note.sections[keys[0]], key: keys[0] };
-    }
-    return { content: 'No content available for this concept.', key: '' };
-  }
+  // Plain-language concept summaries — written for the bedside, not the textbook.
+  var CONCEPT_SUMMARIES = {
+    'acid-base-balance': 'Your body keeps blood pH in a tiny range (7.35-7.45). When something throws it off — sepsis, DKA, kidney failure, overdose — the lungs and kidneys try to compensate. Read the ABG to figure out what broke and whether the body is keeping up.',
+    'cell-proliferation-and-death': 'Cells are constantly dividing and dying in a controlled balance. When cells die that shouldn\'t (infarction, necrosis), you see tissue damage. When cells won\'t die (cancer), you see tumors. Troponin rising? That\'s cardiac cells dying and leaking their contents.',
+    'cell-signaling-and-receptor-biology': 'Drugs work by talking to receptors on cells — turning them on (agonists) or blocking them (antagonists). Understanding receptor types (alpha, beta, muscarinic, etc.) tells you why a drug does what it does AND why it causes the side effects it does.',
+    'coagulation-and-hemostasis': 'Your blood has a system to stop bleeding (clotting) and a system to prevent too much clotting (fibrinolysis). Most of the blood thinners, clotting emergencies, and lab values you deal with come down to where in this balance something went wrong.',
+    'electricity-and-excitability': 'Cells run on electricity — ions flowing in and out across membranes. The heart\'s rhythm, nerve signals, and muscle contractions are all electrical events. Electrolyte imbalances (K+, Ca2+, Mg2+) cause problems because they change how this electricity works.',
+    'enzymes-and-biological-catalysis': 'Enzymes speed up chemical reactions in the body. The liver\'s CYP450 enzymes metabolize most drugs — which is why drug interactions matter so much. When you see "inducer" or "inhibitor," it means a drug is speeding up or slowing down another drug\'s breakdown.',
+    'epidemiology-basics': 'Epidemiology is about patterns of disease in populations — who gets sick, how often, and why. It\'s the foundation for understanding risk factors, screening decisions, and why we treat certain populations differently.',
+    'fluid-and-electrolyte-balance': 'Your body is ~60% water split across compartments. Sodium determines where water goes (water follows sodium). Most of the fluids you hang, the electrolytes you replace, and the edema you see come down to shifts between these compartments.',
+    'genetics-and-protein-expression': 'DNA makes RNA makes protein — that\'s the central dogma. Genetic mutations cause diseases like sickle cell. Pharmacogenomics explains why some patients metabolize drugs differently. Biologics are drugs made by engineering this genetic machinery.',
+    'health-assessment-foundations': 'Systematic assessment is how you catch what\'s changing before it becomes a crisis. Head-to-toe, focused assessments, and knowing what\'s normal for YOUR patient so you recognize when something shifts.',
+    'hemodynamics': 'Blood pressure = cardiac output x vascular resistance. This one equation explains hypertension, shock, heart failure, and why every vasopressor and fluid bolus works the way it does. Change one variable, the others respond.',
+    'homeostasis-and-feedback-loops': 'The body constantly adjusts to stay in balance — temperature, blood sugar, blood pressure, pH. Negative feedback loops keep things stable. When the system can\'t compensate anymore (decompensation), that\'s when patients crash.',
+    'infection-and-infectious-disease': 'Pathogens (bacteria, viruses, fungi) cause disease when they overwhelm the body\'s defenses. The type of organism determines which antibiotic works, how it spreads, and what precautions you need. Culture before you treat when you can.',
+    'inflammation-and-immune-response': 'Inflammation is the body\'s alarm system — redness, heat, swelling, pain. It\'s how the immune system fights infection and heals injuries. But when inflammation goes unchecked (sepsis, ARDS, autoimmune), the response itself becomes the threat.',
+    'nursing-process': 'Assess, diagnose, plan, implement, evaluate — and repeat. It sounds basic, but the nurses who catch deterioration early are the ones who never skip the reassessment step.',
+    'nutrition-and-metabolism': 'Metabolism is how the body converts food into energy. When oxygen is available, cells make energy efficiently (aerobic). Without oxygen, they switch to a backup mode that produces lactate. A rising lactate tells you tissues aren\'t getting what they need.',
+    'oxygen-delivery-and-consumption-do2vo2': 'DO2 = cardiac output x oxygen content. This is THE equation for critical care. Every intervention in shock — fluids, vasopressors, blood transfusion, intubation — is about improving one of those variables to get more oxygen to the tissues.',
+    'oxygenation-and-ventilation': 'Oxygenation is getting O2 into the blood (SpO2 problem). Ventilation is getting CO2 out (CO2/respiratory rate problem). They\'re different problems with different fixes. A patient can have normal SpO2 and still be ventilating terribly.',
+    'pain-physiology-and-management': 'Pain signals travel from the injury site through nerves to the brain. Different drugs block this signal at different points — local anesthetics at the nerve, opioids in the spinal cord and brain, NSAIDs at the injury site. Multimodal means hitting multiple points.',
+    'pharmacokinetics-and-pharmacodynamics': 'Pharmacokinetics = what the body does to the drug (absorb, distribute, metabolize, excrete). Pharmacodynamics = what the drug does to the body. Together they explain dosing, timing, drug levels, and why renal/hepatic patients need dose adjustments.',
+    'shock': 'Shock = not enough oxygen getting to tissues to meet demand. Four types (hypovolemic, cardiogenic, distributive, obstructive), each with a different fix. Recognize the type fast because the wrong treatment can make it worse.',
+    'wound-healing': 'Wounds heal in predictable phases: inflammation, proliferation, remodeling. Things that slow healing — poor perfusion, infection, diabetes, malnutrition — are the same things you\'re assessing and managing at the bedside every shift.'
+  };
 
   function renderConceptCard(note, card, actions) {
     var revealed = session.conceptRevealed;
     var revealHtml = '';
     if (revealed) {
-      // Lead with clinical pearls — these are the quick, digestible takeaways
-      var pearls = note.clinicalPearls || [];
-      if (pearls.length > 0) {
-        pearls.slice(0, 3).forEach(function (p) {
-          revealHtml += '<div class="note-pearl" style="margin-top:8px">' + formatSection(p) + '</div>';
-        });
+      // Show the plain-language summary
+      var summary = CONCEPT_SUMMARIES[session.conceptId];
+      if (summary) {
+        revealHtml = '<div style="font-size:15px;line-height:1.6;margin-bottom:14px">' + escapeHtml(summary) + '</div>';
       } else {
-        // Fallback: show a very brief summary if no pearls
-        var summary = getConceptSummary(note);
-        revealHtml = summarizeSection(summary.content, 3, session.conceptId, summary.key);
+        // Fallback for any concept without a hand-written summary
+        var pearls = note.clinicalPearls || [];
+        if (pearls.length > 0) {
+          pearls.slice(0, 2).forEach(function (p) {
+            revealHtml += '<div class="note-pearl" style="margin-top:8px">' + formatSection(p) + '</div>';
+          });
+        }
       }
-      // Show connected conditions and pharm to explore
+      // Connect to today's condition
+      var condNote = DB.notes[session.conditionId];
+      if (condNote) {
+        var condPatho = findSection(condNote, 'pathophysiology') || findSection(condNote, 'definition') || '';
+        // Grab just the first 2-3 sentences to bridge the concept to the case
+        var bridge = condPatho.split(/[.!]\s/).slice(0, 3).join('. ').trim();
+        if (bridge && bridge.length > 20) {
+          if (!bridge.match(/[.!]$/)) bridge += '.';
+          revealHtml += '<div style="margin-top:14px;padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border)">' +
+            '<strong style="font-size:13px;color:var(--accent)">IN TODAY\'S CASE (' + escapeHtml(condNote.title).toUpperCase() + '):</strong>' +
+            '<p style="margin-top:6px;font-size:14px;line-height:1.5">' + escapeHtml(bridge) + '</p>' +
+            '<button class="note-link-chip" style="margin-top:8px;font-size:12px" onclick="CKB.openNote(\'' + session.conditionId + '\',\'pathophysiology\')">See full pathophysiology &rarr;</button>' +
+          '</div>';
+        }
+      }
+      // Related notes to explore
       var related = DB.graph[session.conceptId] || [];
-      var relConds = related.filter(function (id) { return DB.notes[id] && DB.notes[id].category === 'Conditions'; });
-      var relPharm = related.filter(function (id) { return DB.notes[id] && DB.notes[id].category === 'Pharmacology'; });
-      if (relConds.length > 0 || relPharm.length > 0) {
-        revealHtml += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">' +
-          '<strong style="font-size:13px;color:var(--text-muted)">WHERE YOU\'LL SEE THIS:</strong><div class="note-links" style="margin-top:6px">';
-        relConds.slice(0, 4).forEach(function (id) {
-          revealHtml += '<button class="note-link-chip" onclick="CKB.openNote(\'' + id + '\')">' + escapeHtml(DB.notes[id].title) + '</button>';
-        });
-        relPharm.slice(0, 3).forEach(function (id) {
-          revealHtml += '<button class="note-link-chip" onclick="CKB.openNote(\'' + id + '\')" style="border-color:var(--green);color:var(--green)">' + escapeHtml(DB.notes[id].title) + '</button>';
+      var relOther = related.filter(function (id) { return id !== session.conditionId && DB.notes[id]; }).slice(0, 5);
+      if (relOther.length > 0) {
+        revealHtml += '<div style="margin-top:12px"><strong style="font-size:13px;color:var(--text-muted)">ALSO CONNECTED TO:</strong><div class="note-links" style="margin-top:6px">';
+        relOther.forEach(function (id) {
+          var n = DB.notes[id];
+          var chipStyle = n.category === 'Pharmacology' ? ' style="border-color:var(--green);color:var(--green)"' : '';
+          revealHtml += '<button class="note-link-chip"' + chipStyle + ' onclick="CKB.openNote(\'' + id + '\')">' + escapeHtml(n.title) + '</button>';
         });
         revealHtml += '</div></div>';
       }
       // Deep dive link
-      revealHtml += '<div style="margin-top:12px"><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Deep dive &rarr;</button></div>';
+      revealHtml += '<div style="margin-top:12px"><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Deep dive into ' + escapeHtml(note.title) + ' &rarr;</button></div>';
     }
     card.innerHTML =
       '<div class="flash-category concept">First Principles</div>' +
