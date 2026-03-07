@@ -515,20 +515,87 @@
       renderStepNav(false, false);
   }
 
+  function buildDifferential(note) {
+    // Build a realistic differential: correct dx + 2-3 plausible alternatives
+    if (session.differential) return session.differential;
+
+    var correctId = session.conditionId;
+    var candidates = [];
+
+    // 1. Same system conditions
+    if (note.system) {
+      var conditionIds = DB.categories['Conditions'] || [];
+      conditionIds.forEach(function (id) {
+        if (id !== correctId && DB.notes[id] && DB.notes[id].system === note.system) {
+          candidates.push(id);
+        }
+      });
+    }
+
+    // 2. Related conditions from the graph
+    var related = (DB.graph[correctId] || []).filter(function (id) {
+      return DB.notes[id] && DB.notes[id].category === 'Conditions' && id !== correctId;
+    });
+    related.forEach(function (id) {
+      if (candidates.indexOf(id) === -1) candidates.push(id);
+    });
+
+    // 3. If still not enough, pull random conditions
+    if (candidates.length < 2) {
+      var allConditions = (DB.categories['Conditions'] || []).filter(function (id) {
+        return id !== correctId && candidates.indexOf(id) === -1;
+      });
+      var shuffled = seededShuffle(allConditions, getDaySeed('diff-' + correctId));
+      candidates = candidates.concat(shuffled.slice(0, 5));
+    }
+
+    // Pick 2-3 distractors using daily seed (stable all day)
+    var shuffledCandidates = seededShuffle(candidates, getDaySeed('differential'));
+    var distractors = shuffledCandidates.slice(0, 3).map(function (id) {
+      return { id: id, title: DB.notes[id].title };
+    });
+
+    // Build shuffled list with correct answer mixed in
+    var all = distractors.concat([{ id: correctId, title: note.title, correct: true }]);
+    var shuffledAll = seededShuffle(all, getDaySeed('diff-order'));
+
+    session.differential = { items: shuffledAll, correctId: correctId };
+    return session.differential;
+  }
+
   function renderDifferential(note, card, actions) {
     var revealed = session.scenarioRevealed.differential;
+    var diff = buildDifferential(note);
+
+    var listHtml = '';
+    if (revealed) {
+      diff.items.forEach(function (item) {
+        var isCorrect = item.id === diff.correctId;
+        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:2px solid ' +
+          (isCorrect ? 'var(--green)' : 'var(--border)') + ';background:' +
+          (isCorrect ? 'rgba(34,197,94,0.08)' : 'transparent') + ';cursor:pointer" ' +
+          'onclick="CKB.openNote(\'' + item.id + '\')">' +
+          '<strong style="' + (isCorrect ? 'color:var(--green)' : '') + '">' +
+          (isCorrect ? '✓ ' : '✗ ') + escapeHtml(item.title) + '</strong>' +
+          '</div>';
+      });
+      // Show definition of the correct answer
+      listHtml += note.sections.definition
+        ? '<div style="margin-top:12px">' + summarizeSection(note.sections.definition, 5, session.conditionId, 'definition') + '</div>'
+        : '';
+    } else {
+      diff.items.forEach(function (item, i) {
+        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--border);color:var(--text-muted)">' +
+          (i + 1) + '. ???</div>';
+      });
+    }
+
     card.innerHTML =
-      '<div class="scenario-label">Differential / Condition</div>' +
-      '<div class="scenario-prompt">What condition(s) are you considering?</div>' +
-      '<p class="scenario-body">Think about the chief complaint, vitals, and clinical features. What\'s at the top of your differential?</p>' +
+      '<div class="scenario-label">Differential</div>' +
+      '<div class="scenario-prompt">What\'s on your differential?</div>' +
+      '<p class="scenario-body">Based on the presentation, narrow it down. Which of these conditions best fits?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'differential\')">' +
-        (revealed
-          ? '<strong>' + escapeHtml(note.title) + '</strong>' +
-            (note.aliases && note.aliases.length ? '<br><em style="color:var(--text-muted)">Also known as: ' + escapeHtml(note.aliases.join(', ')) + '</em>' : '') +
-            (note.system ? '<br><span style="font-size:13px;color:var(--text-muted)">System: ' + escapeHtml(note.system) + '</span>' : '') +
-            (note.edTriage ? '<br><span style="font-size:13px;color:var(--red);">' + escapeHtml(note.edTriage) + '</span>' : '') +
-            (note.sections.definition ? '<br><br>' + summarizeSection(note.sections.definition, 5, session.conditionId, 'definition') : '')
-          : 'Tap to reveal the condition')
+        (revealed ? listHtml : '<p style="text-align:center;margin:8px 0">Think it through, then tap to reveal</p>' + listHtml)
       + '</div>';
     actions.innerHTML = (revealed
       ? renderRatingAndNext('differential')
