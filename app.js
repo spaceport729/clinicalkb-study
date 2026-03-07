@@ -13,7 +13,7 @@
   let previousView = 'home';
 
   const STORAGE_KEY = 'clinicalkb-progress';
-  const SESSION_KEY = 'clinicalkb-session-v2';
+  const SESSION_KEY = 'clinicalkb-session-v3';
   const STREAK_KEY = 'clinicalkb-streak';
   const DARK_KEY = 'clinicalkb-dark';
   const COOLDOWN_DAYS = 3;
@@ -288,6 +288,18 @@
     return shuffled[0];
   }
 
+  // Pick a concept related to today's condition (from the knowledge graph)
+  function selectRelatedConcept(conditionId) {
+    if (!conditionId) return null;
+    var related = (DB.graph[conditionId] || []).filter(function (id) {
+      return DB.notes[id] && DB.notes[id].category === 'Concepts';
+    });
+    if (related.length === 0) return null;
+    // Pick using daily seed for stability
+    var shuffled = seededShuffle(related, getDaySeed('concept-related'));
+    return shuffled[0];
+  }
+
   // ==================== SESSION ====================
   function getTodayStr() {
     return new Date().toISOString().slice(0, 10);
@@ -338,7 +350,8 @@
       var conditionId = selectNote('Conditions');
       // Prefer a pharmacology note related to today's condition
       var pharmId = selectRelatedPharm(conditionId) || selectNote('Pharmacology');
-      var conceptId = selectNote('Concepts');
+      // Prefer a concept related to today's condition
+      var conceptId = selectRelatedConcept(conditionId) || selectNote('Concepts');
       var pearls = selectRandomPearls(3);
 
       session = {
@@ -1037,14 +1050,18 @@
           });
         }
       }
-      // Connect to today's condition
+      // Connect to today's condition — use the First Principles bridge if available
       var condNote = DB.notes[session.conditionId];
       if (condNote) {
         var condPatho = findSection(condNote, 'pathophysiology') || findSection(condNote, 'definition') || '';
-        // Grab just the first 2-3 sentences to bridge the concept to the case
-        var bridge = condPatho.split(/[.!]\s/).slice(0, 3).join('. ').trim();
+        // Prefer the First Principles bridge line (written to connect first principles to this condition)
+        var bridge = extractFirstPrinciplesBridge(condPatho);
+        if (!bridge || bridge.length < 20) {
+          // Fallback: first 2-3 sentences of pathophysiology
+          bridge = condPatho.split(/[.!]\s/).slice(0, 3).join('. ').trim();
+          if (bridge && !bridge.match(/[.!]$/)) bridge += '.';
+        }
         if (bridge && bridge.length > 20) {
-          if (!bridge.match(/[.!]$/)) bridge += '.';
           revealHtml += '<div style="margin-top:14px;padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border)">' +
             '<strong style="font-size:13px;color:var(--accent)">IN TODAY\'S CASE (' + escapeHtml(condNote.title).toUpperCase() + '):</strong>' +
             '<p style="margin-top:6px;font-size:14px;line-height:1.5">' + escapeHtml(bridge) + '</p>' +
