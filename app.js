@@ -952,25 +952,39 @@
     var revealed = session.conceptRevealed;
     var revealHtml = '';
     if (revealed) {
-      var summary = getConceptSummary(note);
-      revealHtml = summarizeSection(summary.content, 6, session.conceptId, summary.key);
-      // Add clinical pearls as the quick-hit takeaways
+      // Lead with clinical pearls — these are the quick, digestible takeaways
       var pearls = note.clinicalPearls || [];
       if (pearls.length > 0) {
-        revealHtml += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">' +
-          '<strong style="font-size:13px;color:var(--accent)">KEY TAKEAWAYS:</strong>';
-        pearls.slice(0, 4).forEach(function (p) {
-          revealHtml += '<div class="note-pearl" style="margin-top:6px">' + formatSection(p) + '</div>';
+        pearls.slice(0, 3).forEach(function (p) {
+          revealHtml += '<div class="note-pearl" style="margin-top:8px">' + formatSection(p) + '</div>';
         });
-        revealHtml += '</div>';
+      } else {
+        // Fallback: show a very brief summary if no pearls
+        var summary = getConceptSummary(note);
+        revealHtml = summarizeSection(summary.content, 3, session.conceptId, summary.key);
       }
-      // Link to full note
-      revealHtml += '<br><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Open full note &rarr;</button>';
+      // Show connected conditions and pharm to explore
+      var related = DB.graph[session.conceptId] || [];
+      var relConds = related.filter(function (id) { return DB.notes[id] && DB.notes[id].category === 'Conditions'; });
+      var relPharm = related.filter(function (id) { return DB.notes[id] && DB.notes[id].category === 'Pharmacology'; });
+      if (relConds.length > 0 || relPharm.length > 0) {
+        revealHtml += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">' +
+          '<strong style="font-size:13px;color:var(--text-muted)">WHERE YOU\'LL SEE THIS:</strong><div class="note-links" style="margin-top:6px">';
+        relConds.slice(0, 4).forEach(function (id) {
+          revealHtml += '<button class="note-link-chip" onclick="CKB.openNote(\'' + id + '\')">' + escapeHtml(DB.notes[id].title) + '</button>';
+        });
+        relPharm.slice(0, 3).forEach(function (id) {
+          revealHtml += '<button class="note-link-chip" onclick="CKB.openNote(\'' + id + '\')" style="border-color:var(--green);color:var(--green)">' + escapeHtml(DB.notes[id].title) + '</button>';
+        });
+        revealHtml += '</div></div>';
+      }
+      // Deep dive link
+      revealHtml += '<div style="margin-top:12px"><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Deep dive &rarr;</button></div>';
     }
     card.innerHTML =
       '<div class="flash-category concept">First Principles</div>' +
       '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
-      '<div class="flash-question">Explain this concept. How does it connect to clinical conditions you\'ve seen?</div>' +
+      '<div class="flash-question">What do you know about this concept? How does it connect to what you see at the bedside?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
         (revealed ? revealHtml : 'Tap to reveal')
       + '</div>';
