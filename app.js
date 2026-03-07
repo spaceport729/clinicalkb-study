@@ -13,7 +13,7 @@
   let previousView = 'home';
 
   const STORAGE_KEY = 'clinicalkb-progress';
-  const SESSION_KEY = 'clinicalkb-session-v3';
+  const SESSION_KEY = 'clinicalkb-session-v4';
   const STREAK_KEY = 'clinicalkb-streak';
   const DARK_KEY = 'clinicalkb-dark';
   const COOLDOWN_DAYS = 3;
@@ -276,15 +276,54 @@
     return shuffled.slice(0, count);
   }
 
-  // Pick a pharmacology note related to the condition (from the knowledge graph)
+  // Pick the most relevant pharmacology note for a condition.
+  // Ranks by how often the drug class is mentioned in the condition's
+  // management and pathophysiology sections — the most-mentioned class
+  // is the most clinically relevant (e.g. diuretics for heart failure).
   function selectRelatedPharm(conditionId) {
     if (!conditionId) return null;
+    var condNote = DB.notes[conditionId];
+    if (!condNote) return null;
     var related = (DB.graph[conditionId] || []).filter(function (id) {
       return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
     });
     if (related.length === 0) return null;
-    // Pick using daily seed for stability
-    var shuffled = seededShuffle(related, getDaySeed('pharm-related'));
+    if (related.length === 1) return related[0];
+
+    // Build a relevance corpus from the condition's key sections
+    var corpus = '';
+    ['management', 'pathophysiology', 'clinicalFeatures', 'mechanism'].forEach(function (key) {
+      var text = findSection(condNote, key);
+      if (text) corpus += ' ' + text.toLowerCase();
+    });
+
+    // Score each pharm note by how often its title/aliases appear in the corpus
+    var scored = related.map(function (id) {
+      var pNote = DB.notes[id];
+      var terms = [pNote.title.toLowerCase()];
+      if (pNote.aliases) {
+        pNote.aliases.forEach(function (a) { terms.push(a.toLowerCase()); });
+      }
+      // Also match the slug with spaces (e.g. "vasopressors and inotropes")
+      terms.push(id.replace(/-/g, ' '));
+      // Count mentions
+      var score = 0;
+      terms.forEach(function (t) {
+        if (t.length < 3) return;
+        var idx = 0;
+        while ((idx = corpus.indexOf(t, idx)) !== -1) { score++; idx += t.length; }
+      });
+      return { id: id, score: score };
+    });
+
+    // Sort by score descending, then use daily seed to pick among top scorers
+    scored.sort(function (a, b) { return b.score - a.score; });
+    var topScore = scored[0].score;
+    // If there's a clear winner, use it; otherwise pick among tied top scorers
+    var topTier = scored.filter(function (s) { return s.score >= topScore * 0.6 && s.score > 0; });
+    if (topTier.length === 0) topTier = scored; // all zero — fallback to random
+    var ids = topTier.map(function (s) { return s.id; });
+    var shuffled = seededShuffle(ids, getDaySeed('pharm-related'));
     return shuffled[0];
   }
 

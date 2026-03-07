@@ -115,6 +115,7 @@ body {
   padding: 16px;
   padding-bottom: calc(var(--navbar-h) + var(--safe-bottom) + 16px);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .view { display: none; }
@@ -308,6 +309,8 @@ body {
   color: var(--text);
   font-size: 15px;
   line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .scenario-actions {
@@ -616,6 +619,8 @@ body {
 .note-section-body {
   font-size: 15px;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .note-section-body strong { font-weight: 600; }
 
@@ -628,7 +633,7 @@ body {
 .md-ul li, .md-ol li { margin-bottom: 5px; line-height: 1.55; }
 .md-ul-nested { margin: 4px 0 4px 0; padding-left: 18px; list-style-type: circle; }
 .md-ul-nested li { margin-bottom: 3px; }
-.md-table { width: 100%; font-size: 13px; border-collapse: collapse; margin: 10px 0; }
+.md-table { width: 100%; font-size: 13px; border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .md-table th { padding: 6px 10px; border-bottom: 2px solid var(--border); text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
 .md-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); }
 .md-table tr:last-child td { border-bottom: none; }
