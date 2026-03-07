@@ -1,6 +1,6 @@
 {
   "meta": {
-    "exportDate": "2026-03-06T14:04:25.390306",
+    "exportDate": "2026-03-07T08:35:24.518952",
     "vaultPath": "C:\\Users\\stace\\spaceport\\ClinicalKB",
     "noteCount": 234
   },
@@ -709,8 +709,7 @@
         "A \"normal\" PaCO2 in an asthma exacerbation is a red flag -- the patient should be hyperventilating to compensate; normal CO2 suggests fatigue and impending respiratory failure",
         "Lactic acidosis (lactate > 2 mmol/L) is an early marker of tissue hypoperfusion in sepsis",
         "When correcting metabolic acidosis, do not over-correct with bicarbonate -- overshoot alkalosis can be worse than the original acidosis",
-        "Venous blood gas (VBG) pH is typically ~0.03-0.05 lower and VBG PaCO2 ~3-8 mmHg higher than arterial -- useful for trending when arterial access is not available",
-        "*Add from daily practice*"
+        "Venous blood gas (VBG) pH is typically ~0.03-0.05 lower and VBG PaCO2 ~3-8 mmHg higher than arterial -- useful for trending when arterial access is not available"
       ],
       "relatedNotes": [
         "Acute Kidney Injury",
@@ -1027,8 +1026,7 @@
         "In hyperkalemia, calcium does NOT lower K+ -- it stabilizes the cardiac membrane while you use other methods to shift/remove K+",
         "Third-spacing (ascites, pleural effusion, edema) means the patient can be intravascularly depleted despite total body fluid excess",
         "Always assess renal function before giving Mg2+ or K+ supplementation -- accumulation risk with renal impairment",
-        "D5W is isotonic in the bag but becomes hypotonic once infused (glucose is metabolized, leaving free water)",
-        "*Add from daily practice*"
+        "D5W is isotonic in the bag but becomes hypotonic once infused (glucose is metabolized, leaving free water)"
       ],
       "relatedNotes": [
         "Acid-Base Balance",
@@ -1156,8 +1154,7 @@
         "Rising lactate and falling ScvO2 are early indicators of inadequate tissue oxygen delivery, often before BP drops",
         "In cardiogenic shock, fluids can worsen the situation -- the problem is pump failure, not volume deficit",
         "Always think \"what are the components of CO?\" when troubleshooting hemodynamic instability: HR, preload, afterload, contractility",
-        "Dobutamine LOWERS SVR -- do not use as sole agent in hypotension; pair with a vasopressor if needed",
-        "*Add from daily practice*"
+        "Dobutamine LOWERS SVR -- do not use as sole agent in hypotension; pair with a vasopressor if needed"
       ],
       "relatedNotes": [
         "Acute Coronary Syndrome",
@@ -1287,8 +1284,7 @@
         "CRP responds faster than ESR (rises in 6-12 hours vs. 24-48 hours) and is more specific for acute bacterial processes",
         "Procalcitonin helps differentiate bacterial from viral infection and can guide antibiotic de-escalation",
         "The inflammatory response can become self-perpetuating and destructive (as in ARDS, SIRS, septic shock) -- it is the dysregulated immune response, not the pathogen itself, that often causes organ damage",
-        "Fever is generally beneficial up to a point (enhances immune function, inhibits microbial growth) -- routine antipyretic use is increasingly questioned except for patient comfort or hemodynamic instability",
-        "*Add from daily practice*"
+        "Fever is generally beneficial up to a point (enhances immune function, inhibits microbial growth) -- routine antipyretic use is increasingly questioned except for patient comfort or hemodynamic instability"
       ],
       "relatedNotes": [
         "Anaphylaxis",
@@ -1450,8 +1446,7 @@
         "PEEP recruits collapsed alveoli and improves oxygenation but can decrease venous return and cardiac output -- monitor hemodynamics",
         "High-flow nasal cannula is increasingly used as a bridge to avoid intubation -- watch for failure criteria (persistent tachypnea, desaturation, rising work of breathing)",
         "In CO poisoning, SpO2 is falsely reassuring -- it reads carboxyhemoglobin as oxyhemoglobin; obtain co-oximetry on ABG",
-        "Permissive hypercapnia (accepting higher CO2) is protective in ARDS -- the goal is to avoid ventilator-induced lung injury, not to normalize all lab values",
-        "*Add from daily practice*"
+        "Permissive hypercapnia (accepting higher CO2) is protective in ARDS -- the goal is to avoid ventilator-induced lung injury, not to normalize all lab values"
       ],
       "relatedNotes": [
         "ARDS",
@@ -3610,9 +3605,7 @@
         "nursingConsiderations": "- **Pre-operative assessment:**\n  - Baseline vital signs, peripheral pulses (bilateral pedal, femoral)\n  - Cardiac and pulmonary risk assessment (high prevalence of comorbid CAD, COPD)\n  - Renal function baseline (Cr, BUN) -- especially for contrast exposure and cross-clamping\n  - Coagulation studies (PT/INR, aPTT, fibrinogen, D-dimer)\n- **Post-operative monitoring (EVAR and Open):**\n  - Frequent neurovascular checks of lower extremities (pulses, sensation, color, temperature)\n  - Hemodynamic monitoring -- watch for hypotension, tachycardia (hemorrhage)\n  - Urine output (risk of renal ischemia, especially with suprarenal clamping)\n  - Abdominal girth measurements\n  - Monitor for signs of bowel ischemia (abdominal pain, bloody stool, lactic acidosis)\n  - Incision site/groin access site assessment (hematoma, pseudoaneurysm)\n  - Spinal cord ischemia assessment (0.21-0.9% incidence -- check lower extremity motor/sensory function)\n- **Patient education:**\n  - Smoking cessation (most critical modifiable risk factor)\n  - Surveillance imaging schedule adherence (especially post-EVAR)\n  - Signs of rupture: sudden severe abdominal/back pain, dizziness, syncope -- call 911 immediately\n  - Activity restrictions post-surgery\n  - Cardiovascular risk factor modification (BP control, lipids, diet)",
         "keyPoints": "- AAA is usually asymptomatic and diagnosed incidentally or via screening; a one-time ultrasound for men at age 65 is recommended\n- Smoking is the most important modifiable risk factor; diabetes is paradoxically protective\n- Rupture mortality is 65-85%; risk increases with diameter but can occur at any size (women at higher risk with smaller AAAs)\n- Elective repair threshold is >=55 mm for men (>=50 mm may be considered for women due to smaller baseline aorta)\n- EVAR has lower early mortality but inferior long-term durability compared to open repair; both require post-operative surveillance\n- No pharmacotherapy has been proven to reduce AAA growth in humans"
       },
-      "clinicalPearls": [
-        "*Add from daily practice*"
-      ],
+      "clinicalPearls": [],
       "relatedNotes": [
         "ACE Inhibitors",
         "Acute Myocardial Infarction",
@@ -4844,9 +4837,7 @@
         "nursingConsiderations": "- **Risk factor assessment:** Complete cardiovascular risk profile at every encounter (BP, lipids, glucose, smoking status, BMI, family history, physical activity level)\n- **Medication adherence:** Address statin intolerance proactively; educate patients that statin discontinuation increases CVD events and death; support re-challenge after adverse reactions\n- **Lifestyle counseling:** Smoking cessation support (most impactful intervention), dietary counseling, exercise prescription, weight management\n- **Post-ACS care:**\n  - Dual antiplatelet therapy adherence (critical -- premature discontinuation risks stent thrombosis)\n  - Cardiac rehabilitation referral\n  - Depression screening (PHQ-9) -- common post-MI and impairs recovery\n  - Activity guidelines and return-to-work planning\n- **Patient education:**\n  - Atherosclerosis is a lifelong disease requiring sustained management\n  - Explain \"heart age\" concepts to motivate behavioral change\n  - Warning signs of ACS (chest pain, arm/jaw radiation, dyspnea, diaphoresis) and stroke (FAST)\n  - Importance of follow-up lipid panels and medication titration\n- **Monitoring:** Serial lipid panels (4-12 weeks after therapy change, then periodically); hsCRP if guiding anti-inflammatory therapy; renal and hepatic function with statin use",
         "keyPoints": "- LDL-C is the indubitable causal factor in atherosclerosis; cumulative lifetime exposure drives disease\n- Atherosclerosis begins in childhood and is asymptomatic for decades; subclinical disease is present in over 60% of middle-aged adults\n- Plaque rupture is the most common cause of acute coronary thrombosis, but plaque erosion is increasingly recognized, especially in effectively treated patients\n- Statins remain first-line therapy; combination with ezetimibe and/or PCSK9 inhibitors can achieve dramatically lower LDL-C levels with proportional event reduction\n- Inflammation is a validated therapeutic target (CANTOS trial), though cost and infection risk limit canakinumab use; colchicine is a promising alternative"
       },
-      "clinicalPearls": [
-        "*Add from daily practice*"
-      ],
+      "clinicalPearls": [],
       "relatedNotes": [
         "Abdominal Aortic Aneurysm",
         "Antihypertensives",

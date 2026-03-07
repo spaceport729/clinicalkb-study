@@ -164,8 +164,12 @@ def extract_clinical_pearls(sections):
     if current_pearl:
         pearls.append(' '.join(current_pearl).strip())
 
-    # Clean up empty or tiny entries, remove "First principles:" cross-refs
-    pearls = [p for p in pearls if len(p) > 20 and not p.startswith('*First principles')]
+    # Clean up empty or tiny entries, remove "First principles:" cross-refs and placeholders
+    placeholders = ['add from daily practice', 'add from clinical', 'todo', 'placeholder']
+    pearls = [p for p in pearls
+              if len(p) > 20
+              and not p.startswith('*First principles')
+              and not any(ph in p.lower() for ph in placeholders)]
     return pearls
 
 

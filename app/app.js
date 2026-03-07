@@ -703,16 +703,55 @@
       : '') + renderStepNav(true, revealed);
   }
 
+  // Extract the "First principles:" bridge from pathophysiology text
+  function extractFirstPrinciplesBridge(text) {
+    if (!text) return null;
+    // Match the italic first-principles line: *First principles: ... *
+    var match = text.match(/\*First principles:?\s*([\s\S]+?)\*/);
+    if (match) {
+      return match[1].trim();
+    }
+    return null;
+  }
+
+  // Get the pathophysiology content WITHOUT the first-principles bridge line
+  function getPathoBody(text) {
+    if (!text) return text;
+    // Remove the first-principles italic line
+    return text.replace(/>\s*\*First principles:?[\s\S]+?\*\s*\n*/i, '')
+               .replace(/\*First principles:?[\s\S]+?\*\s*\n*/i, '')
+               .trim();
+  }
+
   function renderPathophys(note, card, actions) {
     var revealed = session.scenarioRevealed.pathophysiology;
-    var content = findSection(note, 'pathophysiology') || findSection(note, 'mechanism') || 'No pathophysiology section available for this note.';
+    var fullContent = findSection(note, 'pathophysiology') || findSection(note, 'mechanism') || 'No pathophysiology section available for this note.';
     var sKey = findSectionKey(note, 'pathophysiology') || findSectionKey(note, 'mechanism');
+
+    var revealHtml = '';
+    if (revealed) {
+      // Show the first-principles bridge prominently
+      var bridge = extractFirstPrinciplesBridge(fullContent);
+      if (bridge) {
+        // Parse out concept names from the bridge (they appear before the em-dash)
+        revealHtml += '<div style="padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border);margin-bottom:14px">' +
+          '<strong style="font-size:13px;color:var(--accent)">THE BIG PICTURE:</strong>' +
+          '<p style="margin-top:6px;font-size:15px;line-height:1.6">' + formatSection(bridge) + '</p>' +
+          '</div>';
+      }
+      // Then show a shorter summary of the detailed pathophysiology
+      var pathoBody = getPathoBody(fullContent);
+      if (pathoBody) {
+        revealHtml += summarizeSection(pathoBody, 6, session.conditionId, sKey);
+      }
+    }
+
     card.innerHTML =
       '<div class="scenario-label">Pathophysiology</div>' +
       '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
       '<p class="scenario-body">Trace it from the underlying mechanism to the signs and symptoms you\'re seeing at the bedside.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal the pathophysiology')
+        (revealed ? revealHtml : 'Tap to reveal the pathophysiology')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('pathophysiology') : '') + renderStepNav(true, revealed);
   }
