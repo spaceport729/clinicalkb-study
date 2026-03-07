@@ -13,7 +13,7 @@
   let previousView = 'home';
 
   const STORAGE_KEY = 'clinicalkb-progress';
-  const SESSION_KEY = 'clinicalkb-session';
+  const SESSION_KEY = 'clinicalkb-session-v2';
   const STREAK_KEY = 'clinicalkb-streak';
   const DARK_KEY = 'clinicalkb-dark';
   const COOLDOWN_DAYS = 3;
@@ -276,6 +276,18 @@
     return shuffled.slice(0, count);
   }
 
+  // Pick a pharmacology note related to the condition (from the knowledge graph)
+  function selectRelatedPharm(conditionId) {
+    if (!conditionId) return null;
+    var related = (DB.graph[conditionId] || []).filter(function (id) {
+      return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
+    });
+    if (related.length === 0) return null;
+    // Pick using daily seed for stability
+    var shuffled = seededShuffle(related, getDaySeed('pharm-related'));
+    return shuffled[0];
+  }
+
   // ==================== SESSION ====================
   function getTodayStr() {
     return new Date().toISOString().slice(0, 10);
@@ -324,7 +336,8 @@
       };
     } else {
       var conditionId = selectNote('Conditions');
-      var pharmId = selectNote('Pharmacology');
+      // Prefer a pharmacology note related to today's condition
+      var pharmId = selectRelatedPharm(conditionId) || selectNote('Pharmacology');
       var conceptId = selectNote('Concepts');
       var pearls = selectRandomPearls(3);
 
@@ -782,6 +795,18 @@
 
   function renderScenarioPearls(note, card, actions) {
     var pearls = note.clinicalPearls || [];
+    // If this note has no pearls, pull from related notes
+    if (pearls.length === 0) {
+      var related = DB.graph[session.conditionId] || [];
+      for (var r = 0; r < related.length && pearls.length < 4; r++) {
+        var rNote = DB.notes[related[r]];
+        if (rNote && rNote.clinicalPearls) {
+          rNote.clinicalPearls.slice(0, 2).forEach(function (p) {
+            pearls.push(p);
+          });
+        }
+      }
+    }
     var html = '<div class="scenario-label">Clinical Pearls</div>' +
       '<div class="scenario-prompt">' + escapeHtml(note.title) + '</div>';
     if (pearls.length > 0) {
@@ -789,8 +814,8 @@
       showPearls.forEach(function (p) {
         html += '<div class="note-pearl">' + formatSection(p) + '</div>';
       });
-      if (pearls.length > 4) {
-        html += '<p style="font-size:13px;color:var(--text-muted);margin-top:8px">+ ' + (pearls.length - 4) + ' more pearls in full note</p>';
+      if (note.clinicalPearls && note.clinicalPearls.length > 4) {
+        html += '<p style="font-size:13px;color:var(--text-muted);margin-top:8px">+ ' + (note.clinicalPearls.length - 4) + ' more pearls in full note</p>';
       }
     } else {
       html += '<p class="scenario-body" style="color:var(--text-muted)">No clinical pearls for this note yet.</p>';
