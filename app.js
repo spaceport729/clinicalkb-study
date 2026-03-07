@@ -18,6 +18,37 @@
   const DARK_KEY = 'clinicalkb-dark';
   const COOLDOWN_DAYS = 3;
 
+  // ==================== SECTION LOOKUP ====================
+  // Many notes use non-standard section keys (e.g. "ed-management" instead of "management",
+  // "pathophysiology-how-hyperglycemia-damages-nerves" instead of "pathophysiology").
+  // This helper finds the best matching section content for a given key.
+  function findSection(note, key) {
+    if (!note || !note.sections) return '';
+    // 1. Exact match
+    if (note.sections[key]) return note.sections[key];
+    // 2. Try key with common prefixes/suffixes
+    var keys = Object.keys(note.sections);
+    // Find keys that start with the target (e.g. "management" matches "management-principles-all-subtypes")
+    var startsWith = keys.filter(function (k) { return k.indexOf(key) === 0; });
+    if (startsWith.length > 0) return note.sections[startsWith[0]];
+    // Find keys that contain the target (e.g. "ed-management" contains "management")
+    var contains = keys.filter(function (k) { return k.indexOf(key) !== -1; });
+    if (contains.length > 0) return note.sections[contains[0]];
+    return '';
+  }
+
+  // Also returns the actual key name used, for deep-linking
+  function findSectionKey(note, key) {
+    if (!note || !note.sections) return key;
+    if (note.sections[key]) return key;
+    var keys = Object.keys(note.sections);
+    var startsWith = keys.filter(function (k) { return k.indexOf(key) === 0; });
+    if (startsWith.length > 0) return startsWith[0];
+    var contains = keys.filter(function (k) { return k.indexOf(key) !== -1; });
+    if (contains.length > 0) return contains[0];
+    return key;
+  }
+
   // ==================== INIT ====================
   async function init() {
     loadProgress();
@@ -301,8 +332,8 @@
   function buildVignette(note) {
     var hints = note.scenarioHints || {};
     var signs = hints.signs || [];
-    var features = note.sections.clinicalFeatures || '';
-    var allText = features + ' ' + (note.sections.definition || '') + ' ' + (note.sections.pathophysiology || '');
+    var features = findSection(note, 'clinicalFeatures') || '';
+    var allText = features + ' ' + (findSection(note, 'definition') || '') + ' ' + (findSection(note, 'pathophysiology') || '');
 
     var demographics = generateDemographics(note);
     var chiefComplaint = extractChiefComplaint(note);
@@ -580,8 +611,10 @@
           '</div>';
       });
       // Show definition of the correct answer
-      listHtml += note.sections.definition
-        ? '<div style="margin-top:12px">' + summarizeSection(note.sections.definition, 5, session.conditionId, 'definition') + '</div>'
+      var defContent = findSection(note, 'definition');
+      var defKey = findSectionKey(note, 'definition');
+      listHtml += defContent
+        ? '<div style="margin-top:12px">' + summarizeSection(defContent, 5, session.conditionId, defKey) + '</div>'
         : '';
     } else {
       diff.items.forEach(function (item, i) {
@@ -606,33 +639,36 @@
 
   function renderPathophys(note, card, actions) {
     var revealed = session.scenarioRevealed.pathophysiology;
-    var content = note.sections.pathophysiology || note.sections.mechanism || 'No pathophysiology section available for this note.';
+    var content = findSection(note, 'pathophysiology') || findSection(note, 'mechanism') || 'No pathophysiology section available for this note.';
+    var sKey = findSectionKey(note, 'pathophysiology') || findSectionKey(note, 'mechanism');
     card.innerHTML =
       '<div class="scenario-label">Pathophysiology</div>' +
       '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
       '<p class="scenario-body">Trace it from the underlying mechanism to the signs and symptoms you\'re seeing at the bedside.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, 'pathophysiology') : 'Tap to reveal the pathophysiology')
+        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal the pathophysiology')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('pathophysiology') : '') + renderStepNav(true, revealed);
   }
 
   function renderDiagnostics(note, card, actions) {
     var revealed = session.scenarioRevealed.diagnostics;
-    var content = note.sections.diagnosis || 'No diagnostics section available for this note.';
+    var content = findSection(note, 'diagnosis') || 'No diagnostics section available for this note.';
+    var sKey = findSectionKey(note, 'diagnosis');
     card.innerHTML =
       '<div class="scenario-label">Diagnostics</div>' +
       '<div class="scenario-prompt">What diagnostics do you anticipate?</div>' +
       '<p class="scenario-body">Think labs, imaging, and bedside assessments the provider will likely order. What would you prioritize drawing first? What\'s time-critical?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'diagnostics\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, 'diagnosis') : 'Tap to reveal diagnostics')
+        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal diagnostics')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('diagnostics') : '') + renderStepNav(true, revealed);
   }
 
   function renderManagement(note, card, actions) {
     var revealed = session.scenarioRevealed.management;
-    var content = note.sections.management || '';
+    var content = findSection(note, 'management') || '';
+    var sKey = findSectionKey(note, 'management');
     // Add linked pharmacology notes
     var pharmLinks = (DB.graph[session.conditionId] || []).filter(function (id) {
       return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
@@ -652,20 +688,21 @@
       '<div class="scenario-prompt">What interventions do you anticipate?</div>' +
       '<p class="scenario-body">Think nursing interventions, medications you\'ll be administering, drips to prepare, and what to have at bedside. What are the priorities?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'management\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, 'management') + pharmHtml : 'Tap to reveal management plan')
+        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) + pharmHtml : 'Tap to reveal management plan')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('management') : '') + renderStepNav(true, revealed);
   }
 
   function renderNursing(note, card, actions) {
     var revealed = session.scenarioRevealed.nursing;
-    var content = note.sections.nursingConsiderations || 'No nursing considerations section available.';
+    var content = findSection(note, 'nursingConsiderations') || 'No nursing considerations section available.';
+    var sKey = findSectionKey(note, 'nursingConsiderations');
     card.innerHTML =
       '<div class="scenario-label">Nursing Priorities</div>' +
       '<div class="scenario-prompt">What are your nursing priorities?</div>' +
       '<p class="scenario-body">Think monitoring parameters, assessment frequency, meds you\'re pushing or hanging, patient safety, and when to escalate to the provider.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'nursing\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, 'nursingConsiderations') : 'Tap to reveal nursing priorities')
+        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal nursing priorities')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('nursing') : '') + renderStepNav(true, revealed);
   }
@@ -784,9 +821,14 @@
       '<div class="flash-question">Can you recall the mechanism of action, key drugs, and primary indications?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPharm()">' +
         (revealed
-          ? (note.sections.mechanism ? '<strong>Mechanism:</strong><br>' + summarizeSection(note.sections.mechanism, 8, session.pharmId, 'mechanism') + '<br><br>' : '') +
-            (note.sections.indications ? '<strong>Indications:</strong><br>' + summarizeSection(note.sections.indications, 8, session.pharmId, 'indications') + '<br><br>' : '') +
-            (note.sections.keyDrugs ? '<strong>Key Drugs:</strong><br>' + summarizeSection(note.sections.keyDrugs, 10, session.pharmId, 'keyDrugs') : '')
+          ? (function() {
+              var mechContent = findSection(note, 'mechanism');
+              var indContent = findSection(note, 'indications');
+              var drugContent = findSection(note, 'keyDrugs') || findSection(note, 'key-agents') || findSection(note, 'key-drug');
+              return (mechContent ? '<strong>Mechanism:</strong><br>' + summarizeSection(mechContent, 8, session.pharmId, findSectionKey(note, 'mechanism')) + '<br><br>' : '') +
+                (indContent ? '<strong>Indications:</strong><br>' + summarizeSection(indContent, 8, session.pharmId, findSectionKey(note, 'indications')) + '<br><br>' : '') +
+                (drugContent ? '<strong>Key Drugs:</strong><br>' + summarizeSection(drugContent, 10, session.pharmId, findSectionKey(note, 'keyDrugs') || findSectionKey(note, 'key-agents') || findSectionKey(note, 'key-drug')) : '');
+            })()
           : 'Tap to reveal')
       + '</div>';
 
@@ -823,7 +865,13 @@
       '<div class="flash-question">Explain this concept. How does it connect to clinical conditions you\'ve seen?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
         (revealed
-          ? summarizeSection(note.sections.definition || note.sections['the-core-concept'] || 'No definition available.', 10, session.conceptId, 'definition')
+          ? (function() {
+              var conceptContent = findSection(note, 'definition') || findSection(note, 'the-core-concept') || findSection(note, 'key-principles') || 'No definition available.';
+              var conceptKey = findSectionKey(note, 'definition');
+              if (!note.sections[conceptKey]) conceptKey = findSectionKey(note, 'the-core-concept');
+              if (!note.sections[conceptKey]) conceptKey = findSectionKey(note, 'key-principles');
+              return summarizeSection(conceptContent, 10, session.conceptId, conceptKey);
+            })()
           : 'Tap to reveal')
       + '</div>';
 
