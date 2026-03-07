@@ -515,20 +515,89 @@
       renderStepNav(false, false);
   }
 
+  function buildDifferential(note) {
+    // Build a realistic differential: correct dx + 2-3 plausible alternatives
+    if (session.differential) return session.differential;
+
+    var correctId = session.conditionId;
+    var candidates = [];
+
+    // 1. Same system conditions
+    if (note.system) {
+      var conditionIds = DB.categories['Conditions'] || [];
+      conditionIds.forEach(function (id) {
+        if (id !== correctId && DB.notes[id] && DB.notes[id].system === note.system) {
+          candidates.push(id);
+        }
+      });
+    }
+
+    // 2. Related conditions from the graph
+    var related = (DB.graph[correctId] || []).filter(function (id) {
+      return DB.notes[id] && DB.notes[id].category === 'Conditions' && id !== correctId;
+    });
+    related.forEach(function (id) {
+      if (candidates.indexOf(id) === -1) candidates.push(id);
+    });
+
+    // 3. If still not enough, pull random conditions
+    if (candidates.length < 2) {
+      var allConditions = (DB.categories['Conditions'] || []).filter(function (id) {
+        return id !== correctId && candidates.indexOf(id) === -1;
+      });
+      var shuffled = seededShuffle(allConditions, getDaySeed('diff-' + correctId));
+      candidates = candidates.concat(shuffled.slice(0, 5));
+    }
+
+    // Pick 2-3 distractors using daily seed (stable all day)
+    var shuffledCandidates = seededShuffle(candidates, getDaySeed('differential'));
+    var distractors = shuffledCandidates.slice(0, 3).map(function (id) {
+      return { id: id, title: DB.notes[id].title };
+    });
+
+    // Build shuffled list with correct answer mixed in
+    var all = distractors.concat([{ id: correctId, title: note.title, correct: true }]);
+    var shuffledAll = seededShuffle(all, getDaySeed('diff-order'));
+
+    session.differential = { items: shuffledAll, correctId: correctId };
+    return session.differential;
+  }
+
   function renderDifferential(note, card, actions) {
     var revealed = session.scenarioRevealed.differential;
+    var diff = buildDifferential(note);
+
+    var listHtml = '';
+    if (revealed) {
+      diff.items.forEach(function (item) {
+        var isCorrect = item.id === diff.correctId;
+        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:2px solid ' +
+          (isCorrect ? 'var(--green)' : 'var(--border)') + ';background:' +
+          (isCorrect ? 'rgba(34,197,94,0.08)' : 'transparent') + ';cursor:pointer" ' +
+          'onclick="CKB.openNote(\'' + item.id + '\')">' +
+          '<strong style="' + (isCorrect ? 'color:var(--green)' : '') + '">' +
+          (isCorrect ? '✓ ' : '✗ ') + escapeHtml(item.title) + '</strong>' +
+          '</div>';
+      });
+      // Show definition of the correct answer
+      listHtml += note.sections.definition
+        ? '<div style="margin-top:12px">' + summarizeSection(note.sections.definition, 5, session.conditionId, 'definition') + '</div>'
+        : '';
+    } else {
+      diff.items.forEach(function (item, i) {
+        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--border)">' +
+          (i + 1) + '. ' + escapeHtml(item.title) + '</div>';
+      });
+    }
+
     card.innerHTML =
-      '<div class="scenario-label">Differential / Condition</div>' +
-      '<div class="scenario-prompt">What condition(s) are you considering?</div>' +
-      '<p class="scenario-body">Think about the chief complaint, vitals, and clinical features. What\'s at the top of your differential?</p>' +
+      '<div class="scenario-label">Differential</div>' +
+      '<div class="scenario-prompt">What\'s on your differential?</div>' +
+      '<p class="scenario-body">' + (revealed
+        ? 'Here\'s the answer — tap any condition to explore it.'
+        : 'Review the options below. Which condition best fits this presentation? Tap to reveal the answer.') + '</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'differential\')">' +
-        (revealed
-          ? '<strong>' + escapeHtml(note.title) + '</strong>' +
-            (note.aliases && note.aliases.length ? '<br><em style="color:var(--text-muted)">Also known as: ' + escapeHtml(note.aliases.join(', ')) + '</em>' : '') +
-            (note.system ? '<br><span style="font-size:13px;color:var(--text-muted)">System: ' + escapeHtml(note.system) + '</span>' : '') +
-            (note.edTriage ? '<br><span style="font-size:13px;color:var(--red);">' + escapeHtml(note.edTriage) + '</span>' : '') +
-            (note.sections.definition ? '<br><br>' + summarizeSection(note.sections.definition, 3, session.conditionId) : '')
-          : 'Tap to reveal the condition')
+        listHtml
       + '</div>';
     actions.innerHTML = (revealed
       ? renderRatingAndNext('differential')
@@ -543,7 +612,7 @@
       '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
       '<p class="scenario-body">Trace it from the underlying mechanism to the signs and symptoms you\'re seeing at the bedside.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
-        (revealed ? summarizeSection(content, 5, session.conditionId) : 'Tap to reveal the pathophysiology')
+        (revealed ? summarizeSection(content, 8, session.conditionId, 'pathophysiology') : 'Tap to reveal the pathophysiology')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('pathophysiology') : '') + renderStepNav(true, revealed);
   }
@@ -556,7 +625,7 @@
       '<div class="scenario-prompt">What diagnostics do you anticipate?</div>' +
       '<p class="scenario-body">Think labs, imaging, and bedside assessments the provider will likely order. What would you prioritize drawing first? What\'s time-critical?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'diagnostics\')">' +
-        (revealed ? summarizeSection(content, 6, session.conditionId) : 'Tap to reveal diagnostics')
+        (revealed ? summarizeSection(content, 8, session.conditionId, 'diagnosis') : 'Tap to reveal diagnostics')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('diagnostics') : '') + renderStepNav(true, revealed);
   }
@@ -583,7 +652,7 @@
       '<div class="scenario-prompt">What interventions do you anticipate?</div>' +
       '<p class="scenario-body">Think nursing interventions, medications you\'ll be administering, drips to prepare, and what to have at bedside. What are the priorities?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'management\')">' +
-        (revealed ? summarizeSection(content, 6, session.conditionId) + pharmHtml : 'Tap to reveal management plan')
+        (revealed ? summarizeSection(content, 8, session.conditionId, 'management') + pharmHtml : 'Tap to reveal management plan')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('management') : '') + renderStepNav(true, revealed);
   }
@@ -596,7 +665,7 @@
       '<div class="scenario-prompt">What are your nursing priorities?</div>' +
       '<p class="scenario-body">Think monitoring parameters, assessment frequency, meds you\'re pushing or hanging, patient safety, and when to escalate to the provider.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'nursing\')">' +
-        (revealed ? summarizeSection(content, 5, session.conditionId) : 'Tap to reveal nursing priorities')
+        (revealed ? summarizeSection(content, 8, session.conditionId, 'nursingConsiderations') : 'Tap to reveal nursing priorities')
       + '</div>';
     actions.innerHTML = (revealed ? renderRatingAndNext('nursing') : '') + renderStepNav(true, revealed);
   }
@@ -648,28 +717,25 @@
     '</div>';
   }
 
-  function summarizeSection(text, maxLines, noteId) {
+  function summarizeSection(text, maxLines, noteId, sectionKey) {
     if (!text) return '<em style="color:var(--text-muted)">No content available.</em>';
     var lines = text.split('\n');
     var kept = [];
     var count = 0;
     var charCount = 0;
-    var maxChars = 200;
+    var maxChars = 500;
     for (var i = 0; i < lines.length && count < maxLines; i++) {
       var line = lines[i].trim();
       if (line === '' && kept.length === 0) continue;
       if (line === '' && count > 0) { kept.push(''); continue; }
       if (line.startsWith('|') && line.indexOf('---') !== -1) continue;
-      // If this line would blow past the char limit, skip it (unless it's the first)
       if (charCount + line.length > maxChars && charCount > 0) break;
       kept.push(lines[i]);
       charCount += line.length;
-      // If we've hit the char limit even on the first line, stop
       if (charCount >= maxChars) break;
       count++;
     }
     var summary = kept.join('\n').trim();
-    // Hard character cap: if a single line is huge, truncate mid-sentence
     if (summary.length > maxChars) {
       var cut = summary.lastIndexOf(' ', maxChars);
       if (cut < maxChars * 0.5) cut = maxChars;
@@ -678,7 +744,10 @@
     var html = formatSection(summary);
     var truncated = text.length > summary.length + 20;
     if (truncated) {
-      html += '<br><button class="note-link-chip" style="margin-top:8px;font-size:13px" onclick="CKB.openNote(\'' + noteId + '\')">See full note &rarr;</button>';
+      var onclick = sectionKey
+        ? "CKB.openNote('" + noteId + "','" + sectionKey + "')"
+        : "CKB.openNote('" + noteId + "')";
+      html += '<br><button class="note-link-chip" style="margin-top:8px;font-size:13px" onclick="' + onclick + '">Read more &rarr;</button>';
     }
     return html;
   }
@@ -715,9 +784,9 @@
       '<div class="flash-question">Can you recall the mechanism of action, key drugs, and primary indications?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPharm()">' +
         (revealed
-          ? (note.sections.mechanism ? '<strong>Mechanism:</strong><br>' + formatSection(note.sections.mechanism.split('\n').slice(0, 6).join('\n')) + '<br><br>' : '') +
-            (note.sections.indications ? '<strong>Indications:</strong><br>' + formatSection(note.sections.indications.split('\n').slice(0, 8).join('\n')) + '<br><br>' : '') +
-            (note.sections.keyDrugs ? '<strong>Key Drugs:</strong><br>' + formatSection(note.sections.keyDrugs.split('\n').slice(0, 10).join('\n')) : '')
+          ? (note.sections.mechanism ? '<strong>Mechanism:</strong><br>' + summarizeSection(note.sections.mechanism, 8, session.pharmId, 'mechanism') + '<br><br>' : '') +
+            (note.sections.indications ? '<strong>Indications:</strong><br>' + summarizeSection(note.sections.indications, 8, session.pharmId, 'indications') + '<br><br>' : '') +
+            (note.sections.keyDrugs ? '<strong>Key Drugs:</strong><br>' + summarizeSection(note.sections.keyDrugs, 10, session.pharmId, 'keyDrugs') : '')
           : 'Tap to reveal')
       + '</div>';
 
@@ -754,7 +823,7 @@
       '<div class="flash-question">Explain this concept. How does it connect to clinical conditions you\'ve seen?</div>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
         (revealed
-          ? formatSection((note.sections.definition || note.sections['the-core-concept'] || 'No definition available.').split('\n').slice(0, 10).join('\n'))
+          ? summarizeSection(note.sections.definition || note.sections['the-core-concept'] || 'No definition available.', 10, session.conceptId, 'definition')
           : 'Tap to reveal')
       + '</div>';
 
@@ -1014,7 +1083,7 @@
   }
 
   // ==================== NOTE DETAIL VIEW ====================
-  function openNote(noteId) {
+  function openNote(noteId, scrollToSection) {
     var note = DB.notes[noteId];
     if (!note) return;
 
@@ -1045,7 +1114,7 @@
     var shown = new Set();
     sectionOrder.forEach(function (key) {
       if (note.sections[key]) {
-        html += '<div class="note-section">' +
+        html += '<div class="note-section" id="section-' + key + '">' +
           '<div class="note-section-title">' + (sectionLabels[key] || key) + '</div>' +
           '<div class="note-section-body">' + formatSection(note.sections[key]) + '</div></div>';
         shown.add(key);
@@ -1053,7 +1122,7 @@
     });
     Object.keys(note.sections).forEach(function (key) {
       if (!shown.has(key)) {
-        html += '<div class="note-section">' +
+        html += '<div class="note-section" id="section-' + key + '">' +
           '<div class="note-section-title">' + key.replace(/-/g, ' ') + '</div>' +
           '<div class="note-section-body">' + formatSection(note.sections[key]) + '</div></div>';
       }
@@ -1082,8 +1151,20 @@
 
     document.getElementById('note-content').innerHTML = html;
     showView('note');
-    // Scroll to top
-    document.getElementById('main').scrollTop = 0;
+    // Scroll to the target section, or top if no section specified
+    if (scrollToSection) {
+      setTimeout(function () {
+        var el = document.getElementById('section-' + scrollToSection);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Brief highlight to show where you landed
+          el.style.background = 'var(--accent-bg, rgba(59,130,246,0.1))';
+          setTimeout(function () { el.style.background = ''; }, 2000);
+        }
+      }, 50);
+    } else {
+      document.getElementById('main').scrollTop = 0;
+    }
   }
 
   // ==================== DAILY QUIPS ====================
@@ -1186,7 +1267,7 @@
   // ==================== PUBLIC API ====================
   window.CKB = {
     showView: showView,
-    openNote: openNote,
+    openNote: function(noteId, sectionKey) { openNote(noteId, sectionKey); },
     goBack: function () {
       showView(previousView || 'home');
     },

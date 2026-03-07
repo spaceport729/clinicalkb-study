@@ -585,17 +585,19 @@
         : '';
     } else {
       diff.items.forEach(function (item, i) {
-        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--border);color:var(--text-muted)">' +
-          (i + 1) + '. ???</div>';
+        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--border)">' +
+          (i + 1) + '. ' + escapeHtml(item.title) + '</div>';
       });
     }
 
     card.innerHTML =
       '<div class="scenario-label">Differential</div>' +
       '<div class="scenario-prompt">What\'s on your differential?</div>' +
-      '<p class="scenario-body">Based on the presentation, narrow it down. Which of these conditions best fits?</p>' +
+      '<p class="scenario-body">' + (revealed
+        ? 'Here\'s the answer — tap any condition to explore it.'
+        : 'Review the options below. Which condition best fits this presentation? Tap to reveal the answer.') + '</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'differential\')">' +
-        (revealed ? listHtml : '<p style="text-align:center;margin:8px 0">Think it through, then tap to reveal</p>' + listHtml)
+        listHtml
       + '</div>';
     actions.innerHTML = (revealed
       ? renderRatingAndNext('differential')
