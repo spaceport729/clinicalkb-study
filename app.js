@@ -186,15 +186,47 @@
     // If all are on cooldown, just use all
     if (eligible.length === 0) eligible = scored;
 
-    // Sort by score descending, take top 5, pick randomly from those
+    // Sort by score descending, take top 5, pick using daily seed (stable for 24h)
     eligible.sort(function (a, b) { return b.score - a.score; });
     var pool = eligible.slice(0, Math.min(5, eligible.length));
-    return pool[Math.floor(Math.random() * pool.length)].id;
+    var daySeed = getDaySeed(category);
+    return pool[daySeed % pool.length].id;
+  }
+
+  // Deterministic daily seed — same date + salt = same number all day
+  function getDaySeed(salt) {
+    var today = new Date();
+    var base = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    // Simple hash: mix in the salt string
+    var h = base;
+    if (salt) {
+      for (var i = 0; i < salt.length; i++) {
+        h = ((h << 5) - h + salt.charCodeAt(i)) | 0;
+      }
+    }
+    return Math.abs(h);
+  }
+
+  // Seeded pseudo-random for stable daily shuffles
+  function seededShuffle(arr, seed) {
+    var s = seed;
+    function next() {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      return s / 0x7fffffff;
+    }
+    var copy = arr.slice();
+    for (var i = copy.length - 1; i > 0; i--) {
+      var j = Math.floor(next() * (i + 1));
+      var tmp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = tmp;
+    }
+    return copy;
   }
 
   function selectRandomPearls(count) {
     var allPearls = [];
-    Object.keys(DB.notes).forEach(function (id) {
+    Object.keys(DB.notes).sort().forEach(function (id) {
       var note = DB.notes[id];
       if (note.clinicalPearls) {
         note.clinicalPearls.forEach(function (pearl) {
@@ -202,14 +234,9 @@
         });
       }
     });
-    // Shuffle and take count
-    for (var i = allPearls.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tmp = allPearls[i];
-      allPearls[i] = allPearls[j];
-      allPearls[j] = tmp;
-    }
-    return allPearls.slice(0, count);
+    // Stable daily shuffle
+    var shuffled = seededShuffle(allPearls, getDaySeed('pearls'));
+    return shuffled.slice(0, count);
   }
 
   // ==================== SESSION ====================
@@ -275,20 +302,51 @@
     var hints = note.scenarioHints || {};
     var signs = hints.signs || [];
     var features = note.sections.clinicalFeatures || '';
+    var allText = features + ' ' + (note.sections.definition || '') + ' ' + (note.sections.pathophysiology || '');
 
-    // Build a patient presentation from the clinical features
     var demographics = generateDemographics(note);
     var chiefComplaint = extractChiefComplaint(note);
-    var vitals = extractVitals(hints, features);
-    var presentingFeatures = signs.slice(0, 4).map(function (s) {
-      // Clean up markdown formatting
-      return s.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').split('—')[0].split('(')[0].trim();
+    var vitals = extractVitals(hints, allText);
+
+    // Clean and filter presenting features from signs
+    var presentingFeatures = signs.slice(0, 6).map(function (s) {
+      return s.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').replace(/\[\[.*?\]\]/g, '')
+              .split('—')[0].split('--')[0].split('(')[0].trim();
+    }).filter(function(s) {
+      // Remove things that name the condition or are too short/long
+      var lower = s.toLowerCase();
+      var titleLower = note.title.toLowerCase();
+      var titleWords = titleLower.split(/\s+/);
+      var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
+      return s.length > 5 && s.length < 80 && !giveaway;
     });
 
-    var vignette = demographics + '. Chief complaint: ' + chiefComplaint + '.';
-    if (vitals) vignette += ' ' + vitals;
+    // If we don't have enough signs, try extracting from clinical features text directly
+    if (presentingFeatures.length < 2 && features) {
+      var lines = features.split('\n');
+      for (var i = 0; i < lines.length && presentingFeatures.length < 4; i++) {
+        var line = lines[i].trim();
+        if ((line.startsWith('- ') || line.startsWith('* ')) && line.length > 10 && line.length < 80) {
+          var cleaned = line.substring(2).replace(/\*\*/g, '').replace(/\[.*?\]/g, '')
+                          .split('—')[0].split('--')[0].split('(')[0].trim();
+          var lower = cleaned.toLowerCase();
+          var titleWords = note.title.toLowerCase().split(/\s+/);
+          var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
+          if (!giveaway && cleaned.length > 5) {
+            presentingFeatures.push(cleaned);
+          }
+        }
+      }
+    }
+
+    // If still no vitals, generate plausible baseline vitals
+    if (!vitals) {
+      vitals = 'Vitals: BP 138/86, HR 92, RR 18, T 37.1C, SpO2 96% on RA.';
+    }
+
+    var vignette = demographics + '. Chief complaint: ' + chiefComplaint + '. ' + vitals;
     if (presentingFeatures.length > 0) {
-      vignette += ' On assessment: ' + presentingFeatures.join('; ') + '.';
+      vignette += ' On assessment: ' + presentingFeatures.slice(0, 4).join('; ') + '.';
     }
     return vignette;
   }
@@ -297,18 +355,21 @@
     var ages = ['42', '55', '67', '73', '28', '61', '38', '81', '49', '56'];
     var sexes = ['M', 'F'];
     var transports = ['presents to ED', 'brought in by EMS', 'walks into triage', 'transferred from urgent care'];
-    var age = ages[Math.floor(Math.random() * ages.length)];
-    var sex = sexes[Math.floor(Math.random() * sexes.length)];
-    var transport = transports[Math.floor(Math.random() * transports.length)];
+    var seed = getDaySeed(note.id);
+    var age = ages[seed % ages.length];
+    var sex = sexes[Math.floor(seed / 10) % sexes.length];
+    var transport = transports[Math.floor(seed / 100) % transports.length];
     return age + sex + ' ' + transport;
   }
 
   function extractChiefComplaint(note) {
     var title = note.title.toLowerCase();
-    // Map conditions to chief complaints
+    // Map common conditions to realistic chief complaints (what the PATIENT says)
     var complaints = {
       'sepsis': 'fever, confusion, and weakness',
       'stemi': 'sudden crushing chest pain radiating to left arm',
+      'nstemi': 'intermittent chest pressure and shortness of breath',
+      'myocardial infarction': 'sudden crushing chest pain',
       'stroke': 'sudden onset facial droop and left-sided weakness',
       'pneumonia': 'productive cough, fever, and shortness of breath',
       'heart failure': 'progressive shortness of breath and lower extremity edema',
@@ -318,24 +379,114 @@
       'pulmonary embolism': 'sudden pleuritic chest pain and dyspnea',
       'cardiac arrest': 'witnessed collapse, unresponsive',
       'dka': 'nausea, vomiting, abdominal pain, and fruity breath',
-      'aki': 'decreased urine output and fatigue',
+      'diabetic ketoacidosis': 'nausea, vomiting, abdominal pain, and fruity breath',
       'pancreatitis': 'severe epigastric pain radiating to back',
       'appendicitis': 'periumbilical pain migrating to RLQ',
       'atrial fibrillation': 'palpitations and irregular heartbeat',
       'hypertension': 'severe headache and blurred vision',
       'aortic': 'sudden tearing chest pain radiating to back',
       'tamponade': 'chest pain, dyspnea, and muffled heart sounds',
+      'kidney injury': 'decreased urine output, nausea, and swelling',
+      'kidney disease': 'fatigue, decreased urine output, and swelling',
+      'gastrointestinal bleed': 'vomiting blood and dark tarry stools',
+      'gi bleed': 'vomiting blood and dark tarry stools',
+      'dvt': 'unilateral leg swelling, pain, and redness',
+      'deep vein': 'unilateral leg swelling, pain, and redness',
+      'cellulitis': 'spreading redness, warmth, and swelling on extremity',
+      'meningitis': 'severe headache, neck stiffness, and fever',
+      'seizure': 'witnessed convulsions and post-event confusion',
+      'overdose': 'found unresponsive with altered mental status',
+      'poisoning': 'nausea, vomiting, and altered mental status',
+      'fracture': 'extremity pain, swelling, and deformity after fall',
+      'pneumothorax': 'sudden chest pain and shortness of breath',
+      'ards': 'progressive respiratory distress and hypoxia',
+      'cirrhosis': 'abdominal distension, jaundice, and confusion',
+      'hepatitis': 'jaundice, fatigue, and RUQ pain',
+      'cholecystitis': 'RUQ pain after eating, nausea, and fever',
+      'bowel obstruction': 'abdominal pain, vomiting, and no bowel movements',
+      'diverticulitis': 'LLQ pain, fever, and change in bowel habits',
+      'ulcerative colitis': 'bloody diarrhea with urgency and cramping',
+      'crohn': 'abdominal pain, diarrhea, and weight loss',
+      'aneurysm': 'sudden severe pain and lightheadedness',
+      'uti': 'dysuria, frequency, and suprapubic pain',
+      'urinary tract': 'dysuria, frequency, and suprapubic pain',
+      'pyelonephritis': 'flank pain, fever, and painful urination',
+      'encephalitis': 'fever, headache, and altered mental status',
+      'endocarditis': 'persistent fever, fatigue, and new heart murmur',
+      'pericarditis': 'sharp chest pain worse with inspiration and lying flat',
+      'hyperkalemia': 'weakness, palpitations, and nausea',
+      'hyponatremia': 'confusion, headache, and nausea',
+      'hypoglycemia': 'tremor, diaphoresis, and confusion',
+      'thyroid storm': 'agitation, high fever, and racing heart',
+      'adrenal': 'weakness, hypotension, and abdominal pain',
+      'sickle cell': 'severe pain in chest and extremities',
+      'migraine': 'severe unilateral headache with nausea and photophobia',
+      'vertigo': 'room-spinning dizziness and nausea',
+      'bell': 'sudden onset unilateral facial weakness',
+      'guillain': 'progressive bilateral leg weakness ascending upward',
+      'myasthenia': 'progressive weakness, drooping eyelids, and difficulty swallowing',
+      'multiple sclerosis': 'visual changes, numbness, and balance problems',
+      'rhabdomyolysis': 'severe muscle pain, weakness, and dark urine',
+      'psychosis': 'agitation, disorganized speech, and paranoid ideation',
+      'delirium': 'acute confusion, agitation, and fluctuating awareness',
+      'depression': 'worsening mood, insomnia, and thoughts of self-harm',
+      'anxiety': 'chest tightness, palpitations, and feeling of impending doom',
+      'suicidal': 'expressing intent to self-harm',
+      'alcohol withdrawal': 'tremor, agitation, and visual hallucinations',
+      'opioid': 'found unresponsive with pinpoint pupils and respiratory depression',
+      'intoxication': 'altered mental status and unsteady gait',
+      'withdrawal': 'tremor, diaphoresis, and agitation',
+      'status epilepticus': 'continuous seizure activity for over 5 minutes',
+      'ectopic': 'lower abdominal pain, vaginal bleeding, and missed period',
+      'preeclampsia': 'headache, visual changes, and elevated blood pressure in pregnancy',
+      'placenta': 'painless vaginal bleeding in third trimester',
+      'burn': 'thermal injury with blistering and pain',
+      'hypothermia': 'found outdoors, confused, with core temp below 35C',
+      'heat stroke': 'confusion, hot dry skin, and core temp above 40C',
+      'drowning': 'submersion event with coughing and respiratory distress',
+      'spinal cord': 'loss of motor and sensory function below level of injury',
+      'compartment': 'severe extremity pain out of proportion, especially with passive stretch',
+      'acute coronary': 'chest pressure with diaphoresis and dyspnea',
+      'aortic dissection': 'sudden tearing chest pain radiating to back',
+      'aortic stenosis': 'exertional syncope, chest pain, and dyspnea',
+      'mitral': 'dyspnea on exertion, fatigue, and palpitations',
+      'cardiomyopathy': 'progressive dyspnea, fatigue, and lower extremity edema',
+      'myocarditis': 'chest pain, dyspnea, and recent viral illness',
+      'respiratory failure': 'progressive dyspnea, accessory muscle use, and cyanosis',
+      'pleural effusion': 'dyspnea and decreased breath sounds on one side',
+      'tension pneumo': 'severe dyspnea, tracheal deviation, and absent breath sounds',
+      'tuberculosis': 'chronic cough, night sweats, and weight loss',
+      'abscess': 'localized swelling, redness, warmth, and fluctuance',
+      'nephrolithiasis': 'severe colicky flank pain radiating to groin',
+      'kidney stone': 'severe colicky flank pain radiating to groin',
+      'testicular torsion': 'sudden onset severe scrotal pain and swelling',
+      'ovarian torsion': 'sudden onset severe unilateral pelvic pain with nausea',
+      'ischemic bowel': 'severe abdominal pain out of proportion to exam',
+      'intussusception': 'episodic abdominal pain, vomiting, and currant jelly stools',
+      'volvulus': 'abdominal distension, pain, and obstipation',
     };
     for (var key in complaints) {
       if (title.indexOf(key) !== -1) return complaints[key];
     }
-    // Fallback: use definition section first sentence
-    var def = note.sections.definition || '';
-    var firstSentence = def.split('.')[0];
-    if (firstSentence.length > 10 && firstSentence.length < 100) {
-      return firstSentence.toLowerCase().replace(/^[a-z]/, function (c) { return c.toUpperCase(); });
+    // Fallback: build from clinical signs (never mention the condition name)
+    var hints = note.scenarioHints || {};
+    var signs = (hints.signs || []).slice(0, 3);
+    if (signs.length >= 2) {
+      var cleaned = signs.map(function(s) {
+        return s.replace(/\*\*/g, '').replace(/\(.*?\)/g, '').split('—')[0].split('--')[0].trim().toLowerCase();
+      }).filter(function(s) { return s.length > 3 && s.length < 60; });
+      if (cleaned.length >= 2) {
+        return cleaned.slice(0, 3).join(', ');
+      }
     }
-    return 'symptoms consistent with ' + note.title.toLowerCase();
+    // Last resort: use a generic but realistic chief complaint
+    var generics = [
+      'not feeling right for the past few days',
+      'general malaise and worsening symptoms',
+      'feeling weak and unwell',
+      'worsening symptoms over the past 24 hours',
+    ];
+    return generics[getDaySeed(note.id) % generics.length];
   }
 
   function extractVitals(hints, features) {
@@ -359,8 +510,9 @@
       '<div class="scenario-label">Patient Presentation</div>' +
       '<div class="vignette">' + escapeHtml(vignette) + '</div>' +
       '<div class="scenario-prompt">Take a moment to consider this presentation.</div>' +
-      '<p class="scenario-body">What conditions are you considering? What would be your initial assessment priorities?</p>';
-    actions.innerHTML = '<button class="btn-primary" onclick="CKB.nextStep()">What\'s your assessment?</button>';
+      '<p class="scenario-body">What conditions are you considering? What\'s your primary survey, and what are you watching for?</p>';
+    actions.innerHTML = '<button class="btn-primary" onclick="CKB.nextStep()">Show me the differential</button>' +
+      renderStepNav(false, false);
   }
 
   function renderDifferential(note, card, actions) {
@@ -375,12 +527,12 @@
             (note.aliases && note.aliases.length ? '<br><em style="color:var(--text-muted)">Also known as: ' + escapeHtml(note.aliases.join(', ')) + '</em>' : '') +
             (note.system ? '<br><span style="font-size:13px;color:var(--text-muted)">System: ' + escapeHtml(note.system) + '</span>' : '') +
             (note.edTriage ? '<br><span style="font-size:13px;color:var(--red);">' + escapeHtml(note.edTriage) + '</span>' : '') +
-            (note.sections.definition ? '<br><br>' + formatSection(note.sections.definition.split('\n').slice(0, 3).join('\n')) : '')
+            (note.sections.definition ? '<br><br>' + summarizeSection(note.sections.definition, 3, session.conditionId) : '')
           : 'Tap to reveal the condition')
       + '</div>';
-    actions.innerHTML = revealed
+    actions.innerHTML = (revealed
       ? renderRatingAndNext('differential')
-      : '';
+      : '') + renderStepNav(true, revealed);
   }
 
   function renderPathophys(note, card, actions) {
@@ -389,11 +541,11 @@
     card.innerHTML =
       '<div class="scenario-label">Pathophysiology</div>' +
       '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
-      '<p class="scenario-body">Trace it from the underlying mechanism to the clinical presentation you saw.</p>' +
+      '<p class="scenario-body">Trace it from the underlying mechanism to the signs and symptoms you\'re seeing at the bedside.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
-        (revealed ? formatSection(content) : 'Tap to reveal the pathophysiology')
+        (revealed ? summarizeSection(content, 5, session.conditionId) : 'Tap to reveal the pathophysiology')
       + '</div>';
-    actions.innerHTML = revealed ? renderRatingAndNext('pathophysiology') : '';
+    actions.innerHTML = (revealed ? renderRatingAndNext('pathophysiology') : '') + renderStepNav(true, revealed);
   }
 
   function renderDiagnostics(note, card, actions) {
@@ -401,12 +553,12 @@
     var content = note.sections.diagnosis || 'No diagnostics section available for this note.';
     card.innerHTML =
       '<div class="scenario-label">Diagnostics</div>' +
-      '<div class="scenario-prompt">What are you ordering?</div>' +
-      '<p class="scenario-body">Think labs, imaging, and bedside assessments. What\'s time-critical?</p>' +
+      '<div class="scenario-prompt">What diagnostics do you anticipate?</div>' +
+      '<p class="scenario-body">Think labs, imaging, and bedside assessments the provider will likely order. What would you prioritize drawing first? What\'s time-critical?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'diagnostics\')">' +
-        (revealed ? formatSection(content) : 'Tap to reveal diagnostics')
+        (revealed ? summarizeSection(content, 6, session.conditionId) : 'Tap to reveal diagnostics')
       + '</div>';
-    actions.innerHTML = revealed ? renderRatingAndNext('diagnostics') : '';
+    actions.innerHTML = (revealed ? renderRatingAndNext('diagnostics') : '') + renderStepNav(true, revealed);
   }
 
   function renderManagement(note, card, actions) {
@@ -428,12 +580,12 @@
     }
     card.innerHTML =
       '<div class="scenario-label">Management & Pharmacology</div>' +
-      '<div class="scenario-prompt">What\'s your treatment plan?</div>' +
-      '<p class="scenario-body">Think acute interventions, medications, and disposition.</p>' +
+      '<div class="scenario-prompt">What interventions do you anticipate?</div>' +
+      '<p class="scenario-body">Think nursing interventions, medications you\'ll be administering, drips to prepare, and what to have at bedside. What are the priorities?</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'management\')">' +
-        (revealed ? formatSection(content) + pharmHtml : 'Tap to reveal management plan')
+        (revealed ? summarizeSection(content, 6, session.conditionId) + pharmHtml : 'Tap to reveal management plan')
       + '</div>';
-    actions.innerHTML = revealed ? renderRatingAndNext('management') : '';
+    actions.innerHTML = (revealed ? renderRatingAndNext('management') : '') + renderStepNav(true, revealed);
   }
 
   function renderNursing(note, card, actions) {
@@ -441,12 +593,12 @@
     var content = note.sections.nursingConsiderations || 'No nursing considerations section available.';
     card.innerHTML =
       '<div class="scenario-label">Nursing Priorities</div>' +
-      '<div class="scenario-prompt">What are your nursing considerations?</div>' +
-      '<p class="scenario-body">Think monitoring, assessments, medication administration, and when to escalate.</p>' +
+      '<div class="scenario-prompt">What are your nursing priorities?</div>' +
+      '<p class="scenario-body">Think monitoring parameters, assessment frequency, meds you\'re pushing or hanging, patient safety, and when to escalate to the provider.</p>' +
       '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'nursing\')">' +
-        (revealed ? formatSection(content) : 'Tap to reveal nursing priorities')
+        (revealed ? summarizeSection(content, 5, session.conditionId) : 'Tap to reveal nursing priorities')
       + '</div>';
-    actions.innerHTML = revealed ? renderRatingAndNext('nursing') : '';
+    actions.innerHTML = (revealed ? renderRatingAndNext('nursing') : '') + renderStepNav(true, revealed);
   }
 
   function renderScenarioPearls(note, card, actions) {
@@ -454,9 +606,13 @@
     var html = '<div class="scenario-label">Clinical Pearls</div>' +
       '<div class="scenario-prompt">' + escapeHtml(note.title) + '</div>';
     if (pearls.length > 0) {
-      pearls.forEach(function (p) {
+      var showPearls = pearls.slice(0, 4);
+      showPearls.forEach(function (p) {
         html += '<div class="note-pearl">' + formatSection(p) + '</div>';
       });
+      if (pearls.length > 4) {
+        html += '<p style="font-size:13px;color:var(--text-muted);margin-top:8px">+ ' + (pearls.length - 4) + ' more pearls in full note</p>';
+      }
     } else {
       html += '<p class="scenario-body" style="color:var(--text-muted)">No clinical pearls for this note yet.</p>';
     }
@@ -481,7 +637,7 @@
         '<button class="rating-btn green" onclick="CKB.rateScenario(\'solid\')">Solid</button>' +
         '<button class="rating-btn amber" onclick="CKB.rateScenario(\'needs-review\')">Needs Review</button>' +
         '<button class="rating-btn red" onclick="CKB.rateScenario(\'study-more\')">Study More</button>' +
-      '</div>';
+      '</div>' + renderStepNav(true, false);
   }
 
   function renderRatingAndNext(stepKey) {
@@ -490,6 +646,57 @@
       '<button class="rating-btn amber" onclick="CKB.rateStep(\'' + stepKey + '\',\'partial\')">Partially</button>' +
       '<button class="rating-btn red" onclick="CKB.rateStep(\'' + stepKey + '\',\'missed\')">Missed it</button>' +
     '</div>';
+  }
+
+  function summarizeSection(text, maxLines, noteId) {
+    if (!text) return '<em style="color:var(--text-muted)">No content available.</em>';
+    var lines = text.split('\n');
+    var kept = [];
+    var count = 0;
+    var charCount = 0;
+    var maxChars = 200;
+    for (var i = 0; i < lines.length && count < maxLines; i++) {
+      var line = lines[i].trim();
+      if (line === '' && kept.length === 0) continue;
+      if (line === '' && count > 0) { kept.push(''); continue; }
+      if (line.startsWith('|') && line.indexOf('---') !== -1) continue;
+      // If this line would blow past the char limit, skip it (unless it's the first)
+      if (charCount + line.length > maxChars && charCount > 0) break;
+      kept.push(lines[i]);
+      charCount += line.length;
+      // If we've hit the char limit even on the first line, stop
+      if (charCount >= maxChars) break;
+      count++;
+    }
+    var summary = kept.join('\n').trim();
+    // Hard character cap: if a single line is huge, truncate mid-sentence
+    if (summary.length > maxChars) {
+      var cut = summary.lastIndexOf(' ', maxChars);
+      if (cut < maxChars * 0.5) cut = maxChars;
+      summary = summary.substring(0, cut) + '…';
+    }
+    var html = formatSection(summary);
+    var truncated = text.length > summary.length + 20;
+    if (truncated) {
+      html += '<br><button class="note-link-chip" style="margin-top:8px;font-size:13px" onclick="CKB.openNote(\'' + noteId + '\')">See full note &rarr;</button>';
+    }
+    return html;
+  }
+
+  function renderStepNav(showBack, showForward) {
+    var html = '<div class="step-nav">';
+    if (showBack) {
+      html += '<button class="step-nav-btn" onclick="CKB.prevStep()">&larr; Back</button>';
+    } else {
+      html += '<span class="step-nav-spacer"></span>';
+    }
+    if (showForward) {
+      html += '<button class="step-nav-btn" onclick="CKB.nextStep()">Skip &rarr;</button>';
+    } else {
+      html += '<span class="step-nav-spacer"></span>';
+    }
+    html += '</div>';
+    return html;
   }
 
   // ==================== PHARM FLASH ====================
@@ -514,13 +721,14 @@
           : 'Tap to reveal')
       + '</div>';
 
-    actions.innerHTML = revealed
+    actions.innerHTML = (revealed
       ? '<div class="rating-row">' +
           '<button class="rating-btn green" onclick="CKB.ratePharm(\'solid\')">Solid</button>' +
           '<button class="rating-btn amber" onclick="CKB.ratePharm(\'needs-review\')">Needs Review</button>' +
           '<button class="rating-btn red" onclick="CKB.ratePharm(\'study-more\')">Study More</button>' +
         '</div>'
-      : '';
+      : '') +
+      '<div class="step-nav"><button class="step-nav-btn" onclick="CKB.backToScenario()">&larr; Back to Case</button><span class="step-nav-spacer"></span></div>';
 
     showView('pharm');
   }
@@ -550,13 +758,14 @@
           : 'Tap to reveal')
       + '</div>';
 
-    actions.innerHTML = revealed
+    actions.innerHTML = (revealed
       ? '<div class="rating-row">' +
           '<button class="rating-btn green" onclick="CKB.rateConcept(\'solid\')">Solid</button>' +
           '<button class="rating-btn amber" onclick="CKB.rateConcept(\'needs-review\')">Needs Review</button>' +
           '<button class="rating-btn red" onclick="CKB.rateConcept(\'study-more\')">Study More</button>' +
         '</div>'
-      : '';
+      : '') +
+      '<div class="step-nav"><button class="step-nav-btn" onclick="CKB.backToPharm()">&larr; Back to Pharm</button><span class="step-nav-spacer"></span></div>';
   }
 
   // ==================== QUICK HITS (PEARLS) ====================
@@ -590,10 +799,13 @@
           : 'Tap to see which note this is from')
       + '</div>';
 
-    actions.innerHTML = revealed
+    var backLabel = session.pearlIndex === 0 ? '&larr; Back to Concept' : '&larr; Previous Pearl';
+    var backAction = session.pearlIndex === 0 ? 'CKB.backToConcept()' : 'CKB.prevPearl()';
+    actions.innerHTML = (revealed
       ? '<button class="btn-primary" onclick="CKB.nextPearl()" style="margin-top:12px">' +
           (session.pearlIndex < pearls.length - 1 ? 'Next Pearl' : 'Finish Session') + '</button>'
-      : '';
+      : '') +
+      '<div class="step-nav"><button class="step-nav-btn" onclick="' + backAction + '">' + backLabel + '</button><span class="step-nav-spacer"></span></div>';
   }
 
   // ==================== SESSION COMPLETE ====================
@@ -1037,6 +1249,41 @@
       session.scenarioStep++;
       renderScenario();
       document.getElementById('main').scrollTop = 0;
+    },
+    prevStep: function () {
+      if (session.scenarioStep > 0) {
+        session.scenarioStep--;
+        renderScenario();
+        document.getElementById('main').scrollTop = 0;
+      }
+    },
+    backToScenario: function () {
+      // Go back to last scenario step (pearls/step 6)
+      session.scenarioStep = 6;
+      renderScenario();
+      showView('scenario');
+      document.getElementById('main').scrollTop = 0;
+    },
+    backToPharm: function () {
+      renderPharmFlash();
+      document.getElementById('main').scrollTop = 0;
+    },
+    backToConcept: function () {
+      var note = DB.notes[session.conceptId];
+      if (note) {
+        var card = document.getElementById('concept-card');
+        var actions = document.getElementById('concept-actions');
+        renderConceptCard(note, card, actions);
+        showView('concept');
+        document.getElementById('main').scrollTop = 0;
+      }
+    },
+    prevPearl: function () {
+      if (session.pearlIndex > 0) {
+        session.pearlIndex--;
+        renderPearlCard();
+        document.getElementById('main').scrollTop = 0;
+      }
     },
   };
 
