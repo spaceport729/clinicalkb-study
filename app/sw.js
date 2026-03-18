@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clinicalkb-v2';
+const CACHE_NAME = 'clinicalkb-v3';
 const ASSETS = [
   './',
   './index.html',

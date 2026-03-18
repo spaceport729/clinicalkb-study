@@ -223,9 +223,9 @@
     // If all are on cooldown, just use all
     if (eligible.length === 0) eligible = scored;
 
-    // Sort by score descending, take top 5, pick using daily seed (stable for 24h)
+    // Sort by score descending, take top 15, pick using daily seed (stable for 24h)
     eligible.sort(function (a, b) { return b.score - a.score; });
-    var pool = eligible.slice(0, Math.min(5, eligible.length));
+    var pool = eligible.slice(0, Math.min(15, eligible.length));
     var daySeed = getDaySeed(category);
     return pool[daySeed % pool.length].id;
   }
@@ -403,11 +403,27 @@
         ratings: {},
         pearlIndex: 0,
       };
+      // Mark all three notes as seen immediately so they rotate tomorrow
+      // (even if user doesn't rate them)
+      markSeen(conditionId);
+      markSeen(pharmId);
+      markSeen(conceptId);
       saveSession();
     }
 
     renderScenario();
     showView('scenario');
+  }
+
+  // Mark a note as seen today (for cooldown rotation) without changing confidence
+  function markSeen(noteId) {
+    if (!noteId) return;
+    var p = getNoteProgress(noteId);
+    if (!p.lastSeen || p.lastSeen !== new Date().toISOString().slice(0, 10)) {
+      p.lastSeen = new Date().toISOString().slice(0, 10);
+      p.timesSeen++;
+      saveProgress();
+    }
   }
 
   // ==================== SCENARIO RENDERING ====================
@@ -457,17 +473,21 @@
     var chiefComplaint = extractChiefComplaint(note);
     var vitals = extractVitals(hints, allText);
 
+    // Filter out findings you wouldn't see at triage — only keep things
+    // visible to eyes/ears or reported by the patient
+    var NOT_TRIAGE_VISIBLE = /hepatomegaly|splenomegaly|organomegaly|biopsy|histolog|microscop|patholog|imaging|ct\s|mri\s|x-ray|radiograph|ultrasound|echocardiogra|angiogra|endoscop|colonoscop|lab\s|serum\s|elevated\s(creatinine|troponin|lactate|bilirubin|bnp|ast|alt|inr|d-dimer)|pleural effusion on|pericardial effusion|ejection fraction|glomerular|bun\s|gfr\s|culture|gram stain|lumbar puncture|csf\s|arterial blood gas|abg\s|ekg\s|ecg\s|electrocardiogram|st[\s-]+(elevation|depression|segment)|t-wave|qrs|rhythm strip|troponin|bnp|d-dimer|ct (shows|reveals|demonstrates)|chest x-ray (shows|reveals)|renal biopsy|liver biopsy|bone marrow|cytology/i;
+
     // Clean and filter presenting features from signs
-    var presentingFeatures = signs.slice(0, 6).map(function (s) {
+    var presentingFeatures = signs.slice(0, 8).map(function (s) {
       return s.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').replace(/\[\[.*?\]\]/g, '')
               .split('—')[0].split('--')[0].split('(')[0].trim();
     }).filter(function(s) {
-      // Remove things that name the condition or are too short/long
       var lower = s.toLowerCase();
       var titleLower = note.title.toLowerCase();
       var titleWords = titleLower.split(/\s+/);
       var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
-      return s.length > 5 && s.length < 80 && !giveaway;
+      // Filter: right length, doesn't give away dx, and is triage-visible
+      return s.length > 5 && s.length < 80 && !giveaway && !NOT_TRIAGE_VISIBLE.test(lower);
     });
 
     // If we don't have enough signs, try extracting from clinical features text directly
@@ -481,7 +501,7 @@
           var lower = cleaned.toLowerCase();
           var titleWords = note.title.toLowerCase().split(/\s+/);
           var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
-          if (!giveaway && cleaned.length > 5) {
+          if (!giveaway && cleaned.length > 5 && !NOT_TRIAGE_VISIBLE.test(lower)) {
             presentingFeatures.push(cleaned);
           }
         }
@@ -639,18 +659,55 @@
   }
 
   function extractVitals(hints, features) {
-    // Look for vital signs in the text
+    // Look for vital signs in the text — generate realistic ranges, not static values
     var vitals = [];
     var text = features + ' ' + (hints.signs || []).join(' ');
-    if (/bp\s*[<>]|sbp\s*[<>]|hypotens/i.test(text)) vitals.push('BP 82/48');
-    else if (/hypertens/i.test(text)) vitals.push('BP 198/112');
-    if (/tachycard|hr\s*>/i.test(text)) vitals.push('HR 118');
-    if (/tachypn|rr\s*>/i.test(text)) vitals.push('RR 28');
-    if (/fever|temp\s*>/i.test(text)) vitals.push('T 39.2C');
-    else if (/hypotherm|temp\s*</i.test(text)) vitals.push('T 35.4C');
-    if (/spo2|hypox|desat/i.test(text)) vitals.push('SpO2 88% on RA');
-    if (vitals.length > 0) return 'Vitals: ' + vitals.join(', ') + '.';
-    return '';
+    var seed = getDaySeed('vitals');
+
+    // Helper: pick a value in a range using daily seed
+    function ranged(min, max, offset) {
+      return min + ((seed + (offset || 0)) % (max - min + 1));
+    }
+
+    if (/bp\s*[<>]|sbp\s*[<>]|hypotens/i.test(text)) {
+      vitals.push('BP ' + ranged(72, 94, 1) + '/' + ranged(38, 56, 2));
+    } else if (/hypertens/i.test(text)) {
+      vitals.push('BP ' + ranged(178, 218, 1) + '/' + ranged(98, 122, 2));
+    } else {
+      // Normal-ish baseline
+      vitals.push('BP ' + ranged(118, 148, 1) + '/' + ranged(68, 88, 2));
+    }
+
+    if (/tachycard|hr\s*>/i.test(text)) {
+      vitals.push('HR ' + ranged(108, 138, 3));
+    } else {
+      vitals.push('HR ' + ranged(72, 96, 3));
+    }
+
+    if (/tachypn|rr\s*>/i.test(text)) {
+      vitals.push('RR ' + ranged(24, 34, 4));
+    } else {
+      vitals.push('RR ' + ranged(14, 20, 4));
+    }
+
+    if (/fever|temp\s*>/i.test(text)) {
+      var t = 38.2 + ((seed + 5) % 20) / 10; // 38.2 – 40.1
+      vitals.push('T ' + t.toFixed(1) + 'C');
+    } else if (/hypotherm|temp\s*</i.test(text)) {
+      var t = 33.0 + ((seed + 5) % 25) / 10; // 33.0 – 35.4
+      vitals.push('T ' + t.toFixed(1) + 'C');
+    } else {
+      var t = 36.4 + ((seed + 5) % 12) / 10; // 36.4 – 37.5
+      vitals.push('T ' + t.toFixed(1) + 'C');
+    }
+
+    if (/spo2|hypox|desat/i.test(text)) {
+      vitals.push('SpO2 ' + ranged(82, 92, 6) + '% on RA');
+    } else {
+      vitals.push('SpO2 ' + ranged(95, 99, 6) + '% on RA');
+    }
+
+    return 'Vitals: ' + vitals.join(', ') + '.';
   }
 
   function renderPresentation(note, card, actions) {
