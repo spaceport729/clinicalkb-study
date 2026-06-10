@@ -13,7 +13,6 @@
 </head>
 <body>
   <div id="app">
-    <!-- Top bar -->
     <header id="topbar">
       <div style="display:flex;align-items:center;gap:8px;min-width:0">
         <button id="topbar-back" onclick="CKB.goBack()" style="display:none" aria-label="Go back">&larr;</button>
@@ -24,46 +23,43 @@
       </button>
     </header>
 
-    <!-- Views -->
     <main id="main">
-      <!-- Home / Today's Session -->
+      <!-- Home -->
       <div id="view-home" class="view active">
-        <div class="home-hero">
-          <div class="greeting" id="greeting"></div>
-          <div class="session-summary" id="session-summary"></div>
+        <div class="home-header">
+          <div class="home-stats-row" id="home-stats-row"></div>
         </div>
-        <button class="btn-primary btn-large" id="btn-start-session">Start Today's Session</button>
-        <div class="home-stats" id="home-stats"></div>
+        <div class="home-grid" id="home-grid"></div>
       </div>
 
-      <!-- Scenario View -->
-      <div id="view-scenario" class="view">
-        <div class="scenario-progress" id="scenario-progress"></div>
-        <div class="scenario-card" id="scenario-card"></div>
-        <div class="scenario-actions" id="scenario-actions"></div>
+      <!-- Presentation (CC Decision Tree) -->
+      <div id="view-presentation" class="view">
+        <div id="presentation-content"></div>
       </div>
 
-      <!-- Pharm Flash View -->
-      <div id="view-pharm" class="view">
-        <div class="flash-card" id="pharm-card"></div>
-        <div class="flash-actions" id="pharm-actions"></div>
+      <!-- Condition (Deep Dive) -->
+      <div id="view-condition" class="view">
+        <div id="condition-content"></div>
       </div>
 
-      <!-- Concept Check View -->
-      <div id="view-concept" class="view">
-        <div class="flash-card" id="concept-card"></div>
-        <div class="flash-actions" id="concept-actions"></div>
+      <!-- A&P (System Deep Dive) -->
+      <div id="view-anatomy" class="view">
+        <div id="anatomy-content"></div>
       </div>
 
-      <!-- Quick Hits (Clinical Pearls) -->
-      <div id="view-pearls" class="view">
-        <div class="flash-card" id="pearl-card"></div>
-        <div class="flash-actions" id="pearl-actions"></div>
+      <!-- Med Class -->
+      <div id="view-medclass" class="view">
+        <div id="medclass-content"></div>
       </div>
 
-      <!-- Session Complete -->
-      <div id="view-complete" class="view">
-        <div class="complete-card" id="complete-card"></div>
+      <!-- Principle -->
+      <div id="view-principle" class="view">
+        <div id="principle-content"></div>
+      </div>
+
+      <!-- Code (Decision Tree Test) -->
+      <div id="view-code" class="view">
+        <div id="code-content"></div>
       </div>
 
       <!-- Progress Dashboard -->
@@ -71,19 +67,18 @@
         <div class="dashboard" id="dashboard"></div>
       </div>
 
-      <!-- Browse / Explore -->
+      <!-- Browse -->
       <div id="view-browse" class="view">
         <div class="browse-controls" id="browse-controls"></div>
         <div class="browse-list" id="browse-list"></div>
       </div>
 
-      <!-- Note Detail View -->
+      <!-- Note Detail -->
       <div id="view-note" class="view">
         <div class="note-content" id="note-content"></div>
       </div>
     </main>
 
-    <!-- Bottom navigation -->
     <nav id="navbar">
       <button class="nav-btn active" data-view="home">
         <span class="nav-icon">&#9733;</span>
