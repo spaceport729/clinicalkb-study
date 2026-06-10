@@ -71,6 +71,22 @@
 
   "conditions": [
     {
+      "id": "sepsis",
+      "title": "Sepsis",
+      "system": "cardiovascular-system",
+      "medClass": "antibiotics-overview",
+      "overview": "Life-threatening organ dysfunction caused by a dysregulated host response to infection. Septic shock = sepsis + vasopressors needed to maintain MAP ≥65 despite adequate fluid resuscitation + lactate >2. Early recognition and treatment is the single biggest factor in survival.",
+      "pathophysiology": "### The Cascade\n- Infection triggers **massive inflammatory response** (cytokines, complement, coagulation)\n- Vasodilation → **distributive shock** (warm shock initially, cold shock late)\n- Capillary leak → third-spacing → **relative hypovolemia**\n- Microvascular thrombosis → **tissue hypoxia** → organ dysfunction\n- Myocardial depression → decreased cardiac output\n\n### Through the DO2/VO2 Lens\n- DO2 drops: CO decreases (myocardial depression) + maldistribution of blood flow\n- VO2 increases: metabolic demand surges from infection/inflammation\n- Supply-demand mismatch → **lactate production** → lactic acidosis",
+      "keyFeatures": "### SIRS Criteria (MultiCare screening)\n- Temp >38.0°C or <36.0°C\n- HR >90\n- RR >20 or PaCO2 <32\n- WBC >12,000 or <4,000 or >10% bands\n\n### Sepsis Red Flags\n- **Altered mental status** (confusion, agitation)\n- **Hypotension** (SBP <90 or MAP <65)\n- **Lactate >2 mmol/L**\n- **Mottled skin**, delayed cap refill\n- **Decreased urine output** (<0.5 mL/kg/hr)",
+      "management": "### Hour-1 Bundle (SEP-1)\n- **Lactate** — draw immediately, repeat if >2\n- **Blood cultures** x2 before antibiotics (don't delay abx for cultures)\n- **Broad-spectrum antibiotics** within 1 hour\n- **30 mL/kg crystalloid** for hypotension or lactate ≥4 (start immediately)\n- **Vasopressors** (norepinephrine first-line) if MAP <65 after fluids\n\n### Reassess\n- Repeat lactate if initial >2 — trending down = good\n- Reassess volume status — passive leg raise, pulse pressure variation\n- Target: MAP ≥65, UOP ≥0.5 mL/kg/hr, lactate normalizing",
+      "nursingPriorities": "- **Time zero = recognition** — start the clock when SIRS + suspected infection identified\n- 2 large-bore IVs — run fluids wide open\n- Blood cultures BEFORE antibiotics but do NOT delay antibiotics to draw cultures\n- Strict I&O — Foley catheter for UOP monitoring\n- Serial lactate trending\n- Continuous hemodynamic monitoring — watch for fluid responsiveness vs fluid overload\n- Central line for vasopressors (peripheral norepi is acceptable temporarily per current evidence)\n- **Communicate with provider** if MAP stays <65 despite 30 mL/kg — needs pressors",
+      "pearls": [
+        "**Lactate is a perfusion marker, not an infection marker** — it reflects tissue hypoxia from any cause. A rising lactate in treated sepsis means the patient is losing ground.",
+        "**Don't withhold fluids because 'the lungs sound wet'** — sepsis is distributive shock. The fluid is third-spacing, not staying intravascular. Give the 30 mL/kg and reassess.",
+        "**Altered mental status may be the only sign** — elderly and immunocompromised patients may not mount fever or tachycardia. Confusion + infection = sepsis until proven otherwise."
+      ]
+    },
+    {
       "id": "st-elevation-myocardial-infarction",
       "title": "STEMI",
       "system": "cardiovascular-system",
@@ -86,6 +102,38 @@
         "Wellens syndrome (deep symmetric T-wave inversions in V2-V3) = critical LAD stenosis about to occlude. Patient may feel fine between episodes. This is a pre-STEMI warning.",
         "Post-discharge 5-drug bundle: ASA + P2Y12 + statin + beta-blocker + ACE inhibitor. Know why each one is there."
       ]
+    },
+    {
+      "id": "pulmonary-embolism",
+      "title": "Pulmonary Embolism",
+      "system": "respiratory-system",
+      "medClass": "anticoagulants",
+      "overview": "Thrombus (usually from DVT) lodges in the pulmonary vasculature, obstructing blood flow through the lungs. Ranges from incidental subsegmental PE to massive PE with hemodynamic collapse (obstructive shock). Time-critical — massive PE kills fast.",
+      "pathophysiology": "### The Obstruction\n- Clot lodges in pulmonary artery → **dead space ventilation** (ventilated but not perfused lung)\n- Increased pulmonary vascular resistance → **RV strain** → RV dilation → RV failure\n- RV dilation pushes septum into LV → decreased LV filling → decreased CO → shock\n- V/Q mismatch → **hypoxemia**\n\n### Risk Factors (Virchow's Triad)\n- **Stasis**: immobility, surgery, long travel, paralysis\n- **Endothelial injury**: trauma, surgery, central lines\n- **Hypercoagulability**: cancer, OCP, pregnancy, genetic (Factor V Leiden, etc.)",
+      "keyFeatures": "### Classic Presentation\n- **Acute dyspnea** (most common symptom)\n- **Pleuritic chest pain** (worse with breathing)\n- **Tachycardia** — often out of proportion to other findings\n- **Hypoxemia** — but SpO2 can be normal in smaller PE\n- **Clear lungs** — this is key: tachycardic + dyspneic + clear lungs = think PE\n\n### Massive PE Signs\n- Hypotension, syncope, cardiac arrest (PEA)\n- JVD, RV heave\n- ECG: S1Q3T3 (classic but uncommon), right heart strain, sinus tach",
+      "management": "### Risk Stratification\n- **Massive PE** (hypotension/shock): systemic tPA + heparin, consider catheter-directed therapy\n- **Submassive PE** (RV strain, normal BP): heparin + close monitoring, consider tPA if deteriorating\n- **Low-risk PE**: heparin, transition to DOAC, may be appropriate for outpatient treatment\n\n### Anticoagulation\n- **Heparin drip** (weight-based) — start immediately if high clinical suspicion, don't wait for CT\n- Transition to DOAC (rivaroxaban, apixaban) for ongoing treatment\n- Duration: 3-6 months minimum, longer if unprovoked or recurrent",
+      "nursingPriorities": "- **Oxygen** — high-flow if hypoxemic\n- **Continuous monitoring** — watch for RV failure, hypotension\n- **Heparin drip** — weight-based dosing, monitor aPTT q6h\n- **Prepare for rapid deterioration** — massive PE can arrest without warning\n- **If tPA given**: no invasive procedures, watch for bleeding, neuro checks\n- **Elevate head of bed**, avoid Valsalva maneuvers\n- **Emotional support** — patients with PE are terrified, often feel like they're dying",
+      "pearls": [
+        "**Tachycardia + dyspnea + clear lungs = PE until proven otherwise.** Most other causes of dyspnea have abnormal lung findings.",
+        "**Don't wait for CT to start heparin** — if clinical suspicion is high (Wells score), anticoagulate immediately. The CT confirms, the heparin treats.",
+        "**PEA arrest in a young person = think massive PE.** Bedside echo showing RV dilation is your clue. tPA can be given during arrest for suspected massive PE."
+      ]
+    },
+    {
+      "id": "ischemic-stroke",
+      "title": "Acute Ischemic Stroke",
+      "system": "nervous-system",
+      "medClass": "anticoagulants",
+      "overview": "Sudden loss of brain function due to interrupted blood supply to a region of the brain. Either thrombotic (clot forms in situ) or embolic (clot travels from elsewhere, usually the heart in afib). Time-critical — \"time is brain.\" Every minute of occlusion = ~1.9 million neurons lost.",
+      "pathophysiology": "### Ischemic Cascade\n- Arterial occlusion → tissue distal to clot loses oxygen\n- **Core infarct**: irreversibly damaged tissue (minutes)\n- **Penumbra**: ischemic but salvageable tissue surrounding the core — THIS is what we're trying to save\n- Without reperfusion, penumbra converts to core over hours\n\n### Why Timing Matters\n- tPA window: **within 4.5 hours** of last known normal (LKN)\n- Thrombectomy window: **up to 24 hours** for large vessel occlusion with salvageable tissue on imaging",
+      "keyFeatures": "### BE-FAST Screening\n- **B**alance — sudden loss of balance/coordination\n- **E**yes — sudden vision loss or double vision\n- **F**ace — facial droop (ask to smile)\n- **A**rm — arm drift (hold both arms out, eyes closed)\n- **S**peech — slurred or garbled speech\n- **T**ime — note the LKN time\n\n### Important Distinctions\n- **LKN (last known normal)** — NOT when symptoms were found. If patient woke up with symptoms, LKN = when they were last seen normal (bedtime)\n- Posterior circulation strokes (brainstem/cerebellum): vertigo, ataxia, diplopia — easy to miss",
+      "management": "### Code Stroke Timeline (MultiCare)\n- **5 min**: MD at bedside\n- **10 min**: CT head started\n- **20 min**: CT interpreted\n- **35 min**: tPA decision\n- **45 min**: tPA administered if indicated\n\n### Thrombolytics\n- **Alteplase (tPA)**: 0.9 mg/kg (max 90 mg), 10% as bolus, rest over 60 min\n- Within 4.5 hours of LKN\n- **Contraindications**: active bleeding, recent surgery, INR >1.7, platelets <100K, BP >185/110\n\n### Thrombectomy\n- Large vessel occlusion (ICA, M1, basilar)\n- Up to 24 hours with favorable imaging",
+      "nursingPriorities": "- **LKN time is CRITICAL** — ask family, witnesses, check cameras, phone records\n- **NIHSS** — perform and document baseline and serial assessments\n- **BP management**: keep <185/110 pre-tPA, <180/105 post-tPA x 24 hrs\n- **1:1 nursing for 6 hours post-tPA** — neuro checks q15 min x 2 hr, q30 min x 6 hr\n- **Watch for hemorrhagic conversion** — sudden headache, worsening neuro exam, vomiting = STOP tPA, stat CT\n- **NPO until swallow screen** — aspiration risk is high\n- **Blood glucose** — keep 140-180, hypoglycemia worsens outcomes",
+      "pearls": [
+        "**The LKN time drives EVERYTHING** — not when symptoms were noticed, not when EMS was called. If the patient woke up with symptoms, LKN = last time seen normal before sleep.",
+        "**Don't drop the BP too fast** — the hypertension is compensatory, maintaining perfusion to the penumbra. Only treat to get below thrombolytic thresholds.",
+        "**Posterior circulation strokes are the ones we miss** — dizziness, nausea, ataxia, diplopia don't scream 'stroke' the way face/arm/speech do. Always consider it."
+      ]
     }
   ],
 
@@ -97,7 +145,25 @@
       "normalPhysiology": "CO = HR x SV (normal 4-8 L/min). Stroke volume determined by preload (stretch), afterload (resistance), and contractility (squeeze strength).\n\nBP = CO x SVR. Mean arterial pressure (MAP) = DBP + 1/3(SBP - DBP). Minimum MAP for organ perfusion: ~60 mmHg.\n\nFrank-Starling mechanism: more stretch → more forceful contraction (up to a point — overstretched fibers lose contractile force, which is what happens in heart failure).\n\nBaroreceptor reflex: carotid/aortic stretch receptors detect pressure changes → rapid HR and vasomotor adjustment. RAAS provides long-term BP regulation through volume and vasoconstriction.",
       "clinicalAssessment": "Heart sounds: S1 (AV valves close, start of systole), S2 (semilunar valves close, end of systole), S3 (rapid filling — normal in young, pathologic >40 = HF), S4 (atrial kick against stiff ventricle = HTN, AS). Murmurs = turbulent flow.\n\nAuscultation points: Aortic (R 2nd ICS), Pulmonic (L 2nd ICS), Erb's (L 3rd ICS), Tricuspid (L 4th ICS), Mitral (L 5th ICS MCL). Mnemonic: All Patients Enjoy Taking Medicine.\n\nJVD: >4 cm above sternal angle at 45 degrees = elevated right heart pressure. Peripheral pulses 0-4+. Cap refill <3 sec. Orthostatic vitals: drop >20 systolic or >10 diastolic = orthostatic hypotension.",
       "labValues": "Troponin: gold standard for myocardial injury (rises 3-6 hr, peaks 12-24 hr). BNP/NT-proBNP: heart failure marker (>400 strongly suggests HF). PT/INR: extrinsic pathway, monitors warfarin. aPTT: intrinsic pathway, monitors heparin. D-dimer: fibrinolysis marker, rules out DVT/PE. Lactate: tissue hypoperfusion, shock indicator.",
-      "clinicalConnection": "In STEMI: LAD occlusion → anterior wall ischemia → troponin release → ST elevation in V1-V4. Frank-Starling fails as infarcted muscle can't contract → decreased CO → cardiogenic shock if large territory. Coronary arteries fill in diastole, so tachycardia (shorter diastole) worsens ischemia. Beta-blockers slow HR partly to protect coronary filling time."
+      "clinicalConnection": "In STEMI: LAD occlusion → anterior wall ischemia → troponin release → ST elevation in V1-V4. Frank-Starling fails as infarcted muscle can't contract → decreased CO → cardiogenic shock if large territory. Coronary arteries fill in diastole, so tachycardia (shorter diastole) worsens ischemia. Beta-blockers slow HR partly to protect coronary filling time.\n\nIn sepsis: distributive shock → massive vasodilation drops SVR → BP = CO x SVR crashes. Fluids increase preload (Frank-Starling), norepinephrine increases SVR. Lactate rises because tissues aren't getting adequate DO2 despite seemingly adequate BP."
+    },
+    {
+      "id": "respiratory-system",
+      "title": "Respiratory System",
+      "keyStructures": "### Upper Airway\n- Nose/mouth → pharynx → larynx (vocal cords) → trachea\n- **Epiglottis** guards the laryngeal inlet during swallowing\n\n### Lower Airway\n- Trachea → R/L mainstem bronchi (right is wider, shorter, more vertical — aspiration goes right)\n- Bronchi → bronchioles → terminal bronchioles → **respiratory bronchioles → alveolar ducts → alveoli**\n- ~300 million alveoli, surface area ~70 m² (tennis court)\n\n### Gas Exchange Unit\n- **Alveolar-capillary membrane**: Type I pneumocytes (gas exchange) + capillary endothelium\n- Type II pneumocytes produce **surfactant** (reduces surface tension, prevents alveolar collapse)\n- Pulmonary capillary blood flow matches alveolar ventilation (V/Q matching)",
+      "normalPhysiology": "### Ventilation (moving air)\n- **Inspiration**: diaphragm contracts (flattens), intercostals lift ribs → negative intrathoracic pressure → air flows in\n- **Expiration**: passive at rest (elastic recoil). Active in distress (abdominal muscles, accessory muscles)\n- Tidal volume ~500 mL, respiratory rate 12-20, minute ventilation = TV x RR\n\n### Gas Exchange (moving O2/CO2)\n- O2 diffuses from alveolus → capillary (high to low partial pressure)\n- CO2 diffuses from capillary → alveolus\n- **V/Q matching**: ventilation should match perfusion. V/Q mismatch = hypoxemia\n\n### Oxygen Transport\n- 98% bound to hemoglobin (SpO2 measures this)\n- 2% dissolved in plasma (PaO2 measures this)\n- **Oxyhemoglobin dissociation curve**: right shift (fever, acidosis, high CO2) = releases O2 to tissues more easily",
+      "clinicalAssessment": "### Inspection\n- Respiratory rate, pattern, depth\n- **Accessory muscle use** (SCM, intercostal retractions) = significant distress\n- **Tripod positioning** = severe air hunger\n- Skin color: cyanosis (late, unreliable), pallor\n\n### Auscultation\n- **Normal**: vesicular (soft, low-pitched, throughout), bronchovesicular (medium, over major bronchi), bronchial (loud, over trachea)\n- **Abnormal**: wheezes (narrowed airways), crackles/rales (fluid/atelectasis), rhonchi (secretions), stridor (upper airway obstruction — EMERGENCY), diminished/absent (consolidation, effusion, PTX)\n\n### Key Values\n- SpO2 94-99% on room air (88-92% target in COPD)\n- ABG: pH 7.35-7.45, PaCO2 35-45, PaO2 80-100, HCO3 22-26",
+      "labValues": "- **ABG/VBG**: pH, PaCO2, PaO2, HCO3, lactate\n- **SpO2**: continuous pulse oximetry (unreliable with poor perfusion, nail polish, CO exposure)\n- **ETCO2**: end-tidal CO2 — confirms ETT placement, monitors ventilation (normal 35-45)\n- **CXR**: consolidation, effusion, PTX, cardiomegaly\n- **CT-PA**: pulmonary embolism\n- **D-dimer**: rules out PE (sensitive, not specific)\n- **Procalcitonin**: bacterial infection marker (helps differentiate bacterial vs viral pneumonia)",
+      "clinicalConnection": "In PE: clot blocks pulmonary blood flow → V/Q mismatch (ventilation without perfusion = dead space) → hypoxemia. RV afterload increases → RV dilation → decreased LV filling → obstructive shock. Clear lungs on auscultation despite severe dyspnea is the clinical clue."
+    },
+    {
+      "id": "nervous-system",
+      "title": "Nervous System",
+      "keyStructures": "### Central Nervous System\n- **Cerebrum**: frontal (personality, motor, speech-Broca's), parietal (sensory, spatial), temporal (hearing, memory, speech-Wernicke's), occipital (vision)\n- **Cerebellum**: coordination, balance, fine motor\n- **Brainstem**: midbrain, pons, medulla — vital functions (breathing, HR, BP, consciousness)\n- **Spinal cord**: C1-S5, ascending (sensory) and descending (motor) tracts\n\n### Peripheral Nervous System\n- **12 cranial nerves** — CN III (pupil constriction), CN VII (facial movement), CN X (vagus — HR, GI)\n- **Spinal nerves**: 31 pairs\n\n### Cerebral Blood Supply\n- **Anterior circulation**: ICA → MCA (lateral cortex, most strokes) + ACA (medial cortex)\n- **Posterior circulation**: vertebral → basilar → PCA (occipital, brainstem, cerebellum)\n- **Circle of Willis**: anastomotic ring connecting anterior and posterior (redundancy)\n\n### Protection\n- **Meninges**: dura (tough outer), arachnoid (web-like), pia (adhered to brain)\n- **CSF**: cushions brain, produced by choroid plexus, reabsorbed by arachnoid granulations\n- **Blood-brain barrier**: tight junctions in cerebral capillaries — limits drug/pathogen entry",
+      "normalPhysiology": "### Neuron Function\n- **Action potential**: resting → depolarization (Na+ in) → repolarization (K+ out)\n- **Synaptic transmission**: AP reaches terminal → Ca2+ entry → neurotransmitter release → binds postsynaptic receptor\n- Key neurotransmitters: **acetylcholine** (NMJ, parasympathetic), **norepinephrine** (sympathetic), **dopamine** (reward, motor), **GABA** (inhibitory), **glutamate** (excitatory), **serotonin** (mood)\n\n### Intracranial Pressure\n- **Monro-Kellie doctrine**: skull is a fixed box containing brain (80%), blood (10%), CSF (10%)\n- If one increases, another must decrease or ICP rises\n- Normal ICP: 5-15 mmHg. CPP = MAP - ICP (goal CPP >60)\n- Cushing's triad (late signs of herniation): hypertension, bradycardia, irregular respirations",
+      "clinicalAssessment": "### Rapid Neuro Assessment\n- **GCS**: Eye (4) + Verbal (5) + Motor (6) = 3-15. ≤8 = cannot protect airway\n- **Pupils**: size, shape, reactivity. Fixed/dilated = CN III compression = herniation\n- **BE-FAST**: Balance, Eyes, Face, Arm, Speech, Time\n- **NIHSS**: 11-item stroke severity scale (0-42)\n\n### Motor/Sensory\n- Strength: 0/5 (no movement) to 5/5 (full against resistance)\n- **Pronator drift**: arms out, palms up, eyes closed — subtle weakness causes pronation and drift\n\n### Reflexes\n- **Babinski**: upgoing toe = upper motor neuron lesion (normal in infants)\n- **DTRs**: 0-4+ scale, 2+ = normal",
+      "labValues": "- **CT head (non-contrast)**: first-line for stroke, hemorrhage, mass. Ischemic stroke may be negative initially\n- **CT angiography**: identifies large vessel occlusion for thrombectomy\n- **Blood glucose**: ALWAYS check — hypoglycemia mimics stroke perfectly\n- **PT/INR**: needed before tPA (must be ≤1.7)\n- **CSF analysis**: if meningitis suspected (cell count, glucose, protein, gram stain, culture)\n- **EEG**: seizure activity, status epilepticus\n- **Troponin**: elevated in SAH and severe TBI (neurogenic stunned myocardium)",
+      "clinicalConnection": "In ischemic stroke: MCA occlusion → contralateral face/arm weakness + speech deficit (if dominant hemisphere). Time is brain — 1.9 million neurons die per minute of occlusion. The penumbra (ischemic but salvageable tissue) is what tPA and thrombectomy aim to rescue. BP management is critical: too-aggressive lowering worsens penumbral perfusion."
     }
   ],
 
@@ -116,6 +182,36 @@
       ],
       "adverseEffects": "Bleeding is the major risk across all agents — GI bleeding, intracranial hemorrhage, surgical bleeding. Aspirin: GI ulceration, tinnitus at high doses. Clopidogrel: TTP (rare). Ticagrelor: dyspnea (dose-related, usually tolerable), ventricular pauses. Prasugrel: highest bleeding risk of the P2Y12 agents.",
       "nursingConsiderations": "Hold for active bleeding. Check platelet count (thrombocytopenia increases risk). Teach patients: bleeding precautions, soft toothbrush, electric razor, avoid NSAIDs, report blood in stool/urine/dark tarry stools. Do NOT crush ticagrelor (can give via NG if needed). Dual antiplatelet therapy duration: usually 12 months post-ACS/stent, then step down to aspirin alone. Patients must understand they CANNOT stop these medications without talking to cardiology — stent thrombosis risk."
+    },
+    {
+      "id": "anticoagulants",
+      "title": "Anticoagulants",
+      "moa": "Prevent clot formation and propagation through different mechanisms:\n- **Unfractionated heparin (UFH)**: potentiates antithrombin III → inhibits thrombin (IIa) and Factor Xa. IV drip for acute anticoagulation.\n- **Low-molecular-weight heparin (enoxaparin/Lovenox)**: preferentially inhibits Factor Xa. SubQ dosing, more predictable pharmacokinetics.\n- **Warfarin**: inhibits vitamin K-dependent clotting factors (II, VII, IX, X). Oral, takes 3-5 days for full effect.\n- **DOACs** (rivaroxaban, apixaban, dabigatran): direct inhibitors of Factor Xa or thrombin. Oral, predictable dosing, fewer monitoring requirements.",
+      "fdaUses": ["DVT/PE treatment and prevention", "Atrial fibrillation stroke prevention", "ACS (heparin)", "Mechanical heart valve (warfarin)", "Post-orthopedic surgery prophylaxis"],
+      "nonFdaUses": ["Cancer-associated thrombosis (LMWH or DOAC preferred)", "Cerebral venous sinus thrombosis"],
+      "edDrugs": [
+        { "name": "Heparin (UFH)", "dose": "VTE: 80 units/kg bolus → 18 units/kg/hr. ACS: 60 units/kg bolus (max 4000) → 12 units/kg/hr", "why": "Gold standard for acute anticoagulation in ED — fast onset (minutes), short half-life (60-90 min), titratable, reversible with protamine. Weight-based dosing is critical." },
+        { "name": "Enoxaparin (Lovenox)", "dose": "VTE treatment: 1 mg/kg SubQ q12h. DVT prophylaxis: 40 mg SubQ daily", "why": "More predictable than UFH, no aPTT monitoring needed. Bridge to oral therapy. Renally cleared — dose adjust for CrCl <30." },
+        { "name": "Warfarin (Coumadin)", "dose": "2-10 mg PO daily, titrate to INR goal 2-3", "why": "Only oral anticoagulant for mechanical heart valves. Takes 3-5 days for full effect — need heparin bridge. Reversed with vitamin K + FFP/PCC for acute bleeding." },
+        { "name": "Rivaroxaban (Xarelto)", "dose": "DVT/PE: 15 mg BID x 21 days, then 20 mg daily. Afib: 20 mg daily with dinner", "why": "Direct Xa inhibitor. No monitoring needed. Take with food (increases absorption). Andexanet alfa for life-threatening bleeding reversal." }
+      ],
+      "adverseEffects": "**Bleeding** is the primary risk for all anticoagulants. UFH: HIT (heparin-induced thrombocytopenia) — check platelets, if dropping STOP heparin and switch to argatroban. Warfarin: narrow therapeutic index, food/drug interactions (vitamin K-rich foods, CYP interactions). DOACs: GI bleeding (especially dabigatran, rivaroxaban).",
+      "nursingConsiderations": "- **Heparin drip**: weight-based protocol, aPTT q6h (goal 60-80 sec or 1.5-2.5x normal), adjust per protocol. Check platelets for HIT.\n- **Warfarin**: INR monitoring (goal 2-3 for most indications, 2.5-3.5 for mechanical valves). Teach consistent vitamin K intake.\n- **DOACs**: assess renal function (dose adjust or avoid in severe renal impairment). No routine monitoring needed.\n- **ALL anticoagulants**: fall risk assessment, bleeding precautions, hold for procedures, know the reversal agents (protamine for heparin, vitamin K + PCC for warfarin, andexanet alfa or PCC for Xa inhibitors, idarucizumab for dabigatran)."
+    },
+    {
+      "id": "antibiotics-overview",
+      "title": "Antibiotics Overview",
+      "moa": "Kill or inhibit bacteria through different mechanisms:\n- **Cell wall synthesis inhibitors**: beta-lactams (penicillins, cephalosporins, carbapenems) — most commonly used. Bactericidal.\n- **Protein synthesis inhibitors**: macrolides (azithromycin), tetracyclines (doxycycline), aminoglycosides (gentamicin) — bacteriostatic (aminoglycosides are bactericidal).\n- **DNA/RNA synthesis inhibitors**: fluoroquinolones (levofloxacin, ciprofloxacin) — bactericidal. Black box warnings.\n- **Folate synthesis inhibitors**: trimethoprim/sulfamethoxazole (Bactrim) — bacteriostatic.\n- **Cell membrane disruptors**: daptomycin, polymyxins — last-resort agents.",
+      "fdaUses": ["Bacterial infections (site-specific and empiric)", "Surgical prophylaxis", "Post-exposure prophylaxis (anthrax, plague)"],
+      "nonFdaUses": ["Acne (tetracyclines, low-dose)", "H. pylori eradication regimens", "Inflammatory conditions (azithromycin for CF, COPD exacerbation)"],
+      "edDrugs": [
+        { "name": "Ceftriaxone (Rocephin)", "dose": "1-2g IV daily", "why": "3rd-gen cephalosporin — workhorse of the ED. Covers most community-acquired infections: pneumonia, UTI/pyelo, meningitis, gonorrhea. Once-daily dosing. Broad gram-negative coverage + some gram-positive." },
+        { "name": "Vancomycin", "dose": "15-20 mg/kg IV q8-12h (weight-based, trough-guided)", "why": "Covers MRSA and other resistant gram-positives. Used for severe skin/soft tissue, endocarditis, meningitis. Monitor trough levels (goal 15-20 for serious infections). Red man syndrome with rapid infusion — run over at least 60 min." },
+        { "name": "Piperacillin-Tazobactam (Zosyn)", "dose": "3.375-4.5g IV q6-8h", "why": "Extended-spectrum penicillin + beta-lactamase inhibitor. Very broad coverage: gram-positive, gram-negative, anaerobes. Go-to for sepsis, intra-abdominal, healthcare-associated infections." },
+        { "name": "Azithromycin (Zithromax)", "dose": "500mg IV/PO day 1, then 250mg PO days 2-5 (Z-pack); or 500mg IV daily", "why": "Macrolide — covers atypicals (Mycoplasma, Legionella, Chlamydia). Added to ceftriaxone for CAP. Also used for STIs (chlamydia: 1g single dose). QTc prolongation risk." }
+      ],
+      "adverseEffects": "- **Beta-lactams**: allergic reactions (cross-reactivity ~2% pen → ceph), C. diff risk, seizures (high dose or renal failure)\n- **Vancomycin**: nephrotoxicity (especially with piperacillin-tazobactam combo), red man syndrome, ototoxicity\n- **Fluoroquinolones**: tendon rupture, QTc prolongation, aortic dissection risk, peripheral neuropathy — BLACK BOX warning, use only when no alternative\n- **Aminoglycosides**: nephrotoxicity, ototoxicity — monitor levels\n- **ALL**: C. difficile risk, resistance development",
+      "nursingConsiderations": "- **Culture before you treat** — but don't delay antibiotics for cultures in sepsis\n- **Allergy history is critical** — true penicillin allergy (anaphylaxis, hives) vs intolerance (GI upset). Cross-reactivity with cephalosporins is ~2%, not 10% as previously taught\n- **Time matters in sepsis** — every hour of delay in antibiotics increases mortality. Draw cultures, hang antibiotics, don't wait for pharmacy\n- **Renal dosing** — many antibiotics need dose adjustment for renal impairment (vancomycin, aminoglycosides, carbapenems)\n- **Monitor for C. diff** — new diarrhea on antibiotics = send stool sample\n- **Complete the course** — undertreating breeds resistance"
     }
   ],
 
@@ -184,6 +280,162 @@
             { "text": "Resume CPR immediately for 2 minutes, give epi if due, and search for reversible causes (Hs and Ts)", "correct": true, "feedback": "Correct per ACLS. PEA is a non-shockable rhythm — you do NOT shock. Resume high-quality CPR, give epinephrine every 3-5 min, and aggressively search for reversible causes. Hs: Hypovolemia, Hypoxia, Hydrogen ion (acidosis), Hypo/Hyperkalemia, Hypothermia. Ts: Tension pneumothorax, Tamponade, Toxins, Thrombosis (PE or MI)." },
             { "text": "Defibrillate — any pulseless rhythm should be shocked", "correct": false, "feedback": "PEA is NOT a shockable rhythm. Only VFib and pulseless VT are shockable. Shocking PEA or asystole provides no benefit and interrupts CPR. The management of PEA is CPR + epi + finding and treating the cause." },
             { "text": "Amiodarone 150mg IV push for the organized rhythm", "correct": false, "feedback": "Amiodarone is for refractory VFib/pVT only. PEA has organized electrical activity — the problem isn't the rhythm, it's that the heart has no mechanical output. Focus on CPR and reversible causes." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cardiac-arrest-asystole-pea",
+      "title": "Cardiac Arrest: Asystole / PEA (ACLS)",
+      "scenario": "Code Blue called. You arrive to find CPR in progress. The monitor shows a flat line.",
+      "steps": [
+        {
+          "prompt": "The monitor shows a flat line. Before calling it asystole, what must you do per ACLS?",
+          "options": [
+            { "text": "Confirm in 2 leads — check connections, gain, and cable", "correct": true, "feedback": "Correct per ACLS. Always confirm asystole in more than one lead. Check that leads are connected, gain is turned up, and you're not looking at fine VFib masquerading as asystole. If there's ANY doubt, treat as VFib and shock." },
+            { "text": "Defibrillate immediately — flat line means shock", "correct": false, "feedback": "Asystole is NOT a shockable rhythm. Defibrillation will not help and interrupts CPR. Only VFib and pulseless VT are shockable. Confirm asystole in 2 leads first." },
+            { "text": "Call time of death — asystole is not survivable", "correct": false, "feedback": "Asystole CAN be survivable if a reversible cause is found and treated. Continue resuscitation and search for Hs and Ts." }
+          ]
+        },
+        {
+          "prompt": "Asystole confirmed in 2 leads. CPR is ongoing. What is your management per ACLS?",
+          "options": [
+            { "text": "Continue CPR, epinephrine 1mg IV/IO every 3-5 min, search for reversible causes", "correct": true, "feedback": "Correct per ACLS. Asystole/PEA management: high-quality CPR + epinephrine 1mg IV/IO every 3-5 minutes + aggressively search for and treat reversible causes (Hs and Ts). There is no role for defibrillation or antiarrhythmics." },
+            { "text": "Defibrillate at maximum energy to try to convert the rhythm", "correct": false, "feedback": "Asystole is NOT shockable. There is no electrical activity to reset. Shocking asystole wastes time and interrupts CPR." },
+            { "text": "Amiodarone 300mg IV push to try to restore a rhythm", "correct": false, "feedback": "Amiodarone is only for refractory VFib/pVT. It has no role in asystole or PEA management." }
+          ]
+        },
+        {
+          "prompt": "You're searching for reversible causes. Which are the Hs and Ts per ACLS?",
+          "options": [
+            { "text": "Hypovolemia, Hypoxia, H+ (acidosis), Hypo/Hyperkalemia, Hypothermia — Tension PTX, Tamponade, Toxins, Thrombosis (PE/MI)", "correct": true, "feedback": "Correct per ACLS. The 5 Hs and 5 Ts are the reversible causes of cardiac arrest. Each has a specific treatment: Hypovolemia → volume, Hypoxia → oxygenate, H+ → bicarb, Hypo/Hyperkalemia → correct K+, Hypothermia → rewarm, Tension PTX → needle decompress, Tamponade → pericardiocentesis, Toxins → specific antidote, Thrombosis → tPA or PCI." },
+            { "text": "Hypertension, Hyperglycemia, Hyperthermia — Tachycardia, Trauma, Torsades", "correct": false, "feedback": "Those are not the ACLS Hs and Ts. The correct Hs: Hypovolemia, Hypoxia, Hydrogen ion (acidosis), Hypo/Hyperkalemia, Hypothermia. The correct Ts: Tension pneumothorax, Tamponade, Toxins, Thrombosis." },
+            { "text": "I don't need to know them — just keep doing CPR and giving epi", "correct": false, "feedback": "CPR and epi alone rarely convert asystole/PEA. Finding and treating the CAUSE is the key to survival in non-shockable arrest. The Hs and Ts guide your differential." }
+          ]
+        },
+        {
+          "prompt": "After 2 minutes of CPR, the rhythm check now shows organized QRS complexes on the monitor. Per ACLS, what do you do?",
+          "options": [
+            { "text": "Check for a pulse", "correct": true, "feedback": "Correct per ACLS. Organized electrical activity on a rhythm check → check for a pulse. If pulse present = ROSC → begin post-cardiac arrest care. If no pulse = PEA → resume CPR, continue epi, keep searching for reversible causes." },
+            { "text": "Resume CPR immediately for 2 more minutes", "correct": false, "feedback": "When you see organized electrical activity at a rhythm check, you must determine if it's ROSC or PEA. A brief pulse check (<10 sec) is indicated. If no pulse, then resume CPR." },
+            { "text": "Defibrillate — any new rhythm should be shocked", "correct": false, "feedback": "Only shock VFib and pulseless VT. An organized rhythm is NOT shockable. Determine if the patient has a pulse (ROSC) or not (PEA)." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acls-bradycardia",
+      "title": "Symptomatic Bradycardia (ACLS)",
+      "scenario": "68-year-old presents with dizziness and near-syncope. HR 38, BP 82/50. Alert but pale and diaphoretic.",
+      "steps": [
+        {
+          "prompt": "The patient has a heart rate of 38 with hypotension and altered mental status. Per ACLS, what is the first-line medication?",
+          "options": [
+            { "text": "Atropine 1mg IV push", "correct": true, "feedback": "Correct per ACLS. Atropine 1mg IV is first-line for symptomatic bradycardia. May repeat every 3-5 minutes, max total dose 3mg. Atropine increases HR by blocking vagal (parasympathetic) input to the SA node." },
+            { "text": "Epinephrine 1mg IV push", "correct": false, "feedback": "Push-dose epi (1mg) is a cardiac arrest dose. For bradycardia with a pulse, if a drip is needed, epinephrine is given as an infusion at 2-10 mcg/min — but atropine is first-line." },
+            { "text": "Amiodarone 150mg IV", "correct": false, "feedback": "Amiodarone is an antiarrhythmic that can actually WORSEN bradycardia. It is used for tachyarrhythmias, not bradycardia." }
+          ]
+        },
+        {
+          "prompt": "You've given atropine 1mg IV x3 (total 3mg). HR is now 42, BP still 78/48. The patient is more confused. Per ACLS, what's next?",
+          "options": [
+            { "text": "Transcutaneous pacing or dopamine/epinephrine infusion", "correct": true, "feedback": "Correct per ACLS. When atropine fails (max 3mg), the options are: transcutaneous pacing, dopamine infusion (5-20 mcg/kg/min), or epinephrine infusion (2-10 mcg/min). Pacing is preferred if available and the patient is deteriorating. Consider cardiology consult for transvenous pacing." },
+            { "text": "More atropine — increase to 2mg IV push", "correct": false, "feedback": "Max atropine dose per ACLS is 3mg total. Additional doses beyond 3mg are unlikely to be effective and may cause paradoxical slowing. Move to pacing or vasopressor infusion." },
+            { "text": "Synchronized cardioversion at 100J", "correct": false, "feedback": "Cardioversion is for TACHYCARDIA, not bradycardia. Cardioverting a bradycardic patient could push them into asystole." }
+          ]
+        },
+        {
+          "prompt": "You initiate transcutaneous pacing. The pacer is set to 70 bpm. You see pacing spikes on the monitor but the heart rate hasn't changed. What do you adjust?",
+          "options": [
+            { "text": "Increase the milliamps (output/current) until you see electrical capture", "correct": true, "feedback": "Correct. Pacing spikes without QRS response = failure to capture. Increase the milliamps (current output) until each pacing spike is followed by a wide QRS complex (electrical capture). Then confirm mechanical capture by checking pulse with each QRS. Typical capture threshold is 50-100 mA." },
+            { "text": "Increase the rate to 120 bpm", "correct": false, "feedback": "Increasing rate won't help if you don't have capture. The issue is insufficient current to depolarize the myocardium. Increase milliamps first, then set the rate to achieve adequate perfusion (typically 60-80 bpm)." },
+            { "text": "Switch to defibrillation mode", "correct": false, "feedback": "Defibrillation is for VFib/pVT. This patient has a pulse — they need pacing, not defibrillation. Continue adjusting pacing parameters to achieve capture." }
+          ]
+        },
+        {
+          "prompt": "You have electrical capture — every pacing spike is followed by a wide QRS. Per ACLS, what must you confirm next?",
+          "options": [
+            { "text": "Confirm mechanical capture — check for a pulse with each QRS", "correct": true, "feedback": "Correct per ACLS. Electrical capture (pacing spike → QRS) does not guarantee mechanical capture (actual cardiac contraction producing a pulse). Palpate a pulse — if present, you have mechanical capture. Also assess BP improvement. The patient will need sedation/analgesia as transcutaneous pacing is painful." },
+            { "text": "Nothing further — electrical capture means it's working", "correct": false, "feedback": "Electrical capture alone is insufficient. You must confirm mechanical capture (a pulse corresponding to the paced QRS complexes). PEA can occur with pacing — electrical activity without mechanical output." },
+            { "text": "Immediately start a dopamine drip to supplement", "correct": false, "feedback": "First confirm mechanical capture and assess hemodynamic response. If pacing achieves adequate HR and BP, a vasopressor drip may not be needed. Consult cardiology for transvenous pacing as the definitive intervention." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acls-tachycardia-unstable",
+      "title": "Unstable Tachycardia (ACLS)",
+      "scenario": "45-year-old presents with palpitations, chest pain, and dizziness. HR 186, BP 76/40, diaphoretic, altered mental status. Monitor shows regular narrow-complex tachycardia.",
+      "steps": [
+        {
+          "prompt": "The patient has a tachyarrhythmia with serious signs/symptoms (hypotension, altered mental status, chest pain). Per ACLS, what defines UNSTABLE tachycardia?",
+          "options": [
+            { "text": "Tachycardia causing hypotension, AMS, signs of shock, ischemic chest pain, or acute heart failure", "correct": true, "feedback": "Correct per ACLS. Unstable = the tachycardia is CAUSING hemodynamic compromise. Key signs: hypotension, altered mental status, signs of shock, ischemic chest pain, acute heart failure. If the patient is unstable, treatment is immediate synchronized cardioversion — do not delay for drugs." },
+            { "text": "Any heart rate above 150 bpm", "correct": false, "feedback": "Heart rate alone doesn't define instability. A young healthy patient with SVT at 180 bpm may be completely stable. Instability is defined by symptoms and hemodynamic compromise, not a specific rate cutoff." },
+            { "text": "Any tachycardia that doesn't respond to adenosine", "correct": false, "feedback": "Adenosine response doesn't define stability. An unstable patient should receive synchronized cardioversion immediately — you don't trial adenosine first when the patient is hemodynamically compromised." }
+          ]
+        },
+        {
+          "prompt": "This patient is unstable — hypotension, AMS, chest pain from the tachycardia. Per ACLS, what is the immediate treatment?",
+          "options": [
+            { "text": "Synchronized cardioversion", "correct": true, "feedback": "Correct per ACLS. Unstable tachycardia with a pulse = immediate synchronized cardioversion. Key word: SYNCHRONIZED (not defibrillation). The sync mode times the shock to the R wave to avoid shocking during the vulnerable T wave period, which could cause VFib. Sedate the patient if time and condition permit." },
+            { "text": "Adenosine 6mg rapid IV push", "correct": false, "feedback": "Per ACLS, unstable tachycardia gets cardioversion, not adenosine. Adenosine is for STABLE narrow-complex tachycardia (suspected SVT). Do not delay definitive treatment with medication trials when the patient is hemodynamically unstable." },
+            { "text": "Amiodarone 150mg IV over 10 minutes", "correct": false, "feedback": "Amiodarone is for STABLE wide-complex tachycardia or as a second-line agent. When the patient is unstable, synchronized cardioversion is the immediate treatment — it works faster than any medication." }
+          ]
+        },
+        {
+          "prompt": "You're preparing for synchronized cardioversion of this narrow-complex tachycardia. Per ACLS, what is the starting energy?",
+          "options": [
+            { "text": "50-100J synchronized for narrow-complex; 100J synchronized for wide-complex", "correct": true, "feedback": "Correct per ACLS. Narrow-complex (SVT, afib, aflutter): start at 50-100J synchronized. Wide-complex (VT with pulse): start at 100J synchronized. If initial dose fails, escalate energy. Always confirm SYNC mode is on — if you accidentally defibrillate (unsynchronized) a perfusing rhythm during the T wave, you can induce VFib." },
+            { "text": "200J biphasic unsynchronized (defibrillation)", "correct": false, "feedback": "200J unsynchronized is for defibrillation of VFib/pulseless VT. This patient has a PULSE — you need SYNCHRONIZED cardioversion at a lower energy. Sync mode is critical to avoid shocking during the vulnerable period." },
+            { "text": "360J maximum energy", "correct": false, "feedback": "Start low and escalate. Narrow-complex rhythms often convert at lower energies (50-100J). Maximum energy increases the risk of myocardial injury. Escalate only if initial attempts fail." }
+          ]
+        },
+        {
+          "prompt": "IMPORTANT: You press the shock button but nothing happens. The machine shows 'SYNC' on the screen. Why didn't it fire?",
+          "options": [
+            { "text": "In sync mode, the machine waits to detect an R wave before delivering the shock — you must hold the button", "correct": true, "feedback": "Correct. In synchronized mode, the defibrillator analyzes the rhythm and waits for an R wave to deliver the shock. You must HOLD the shock button until the shock is delivered — it won't fire instantly like in defib mode. There may be a brief delay. If the rhythm is too irregular or the R waves are hard to detect, the machine may not fire — you may need to switch leads or, if the patient deteriorates to pulseless, switch to unsynchronized (defib) mode." },
+            { "text": "The machine is broken — switch to a backup defibrillator", "correct": false, "feedback": "This is normal sync mode behavior, not a malfunction. The machine is waiting to detect an R wave. Hold the button until it fires. This is a common point of confusion during real codes." },
+            { "text": "You need to turn sync mode off and just defibrillate", "correct": false, "feedback": "Do NOT turn off sync mode for a patient with a pulse. Unsynchronized shocks risk hitting the T wave and inducing VFib. Hold the shock button and let the machine find the R wave. Only switch to unsync if the patient becomes pulseless." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adult-bls",
+      "title": "Adult BLS (AHA BLS Algorithm)",
+      "scenario": "You're walking through the hospital lobby when a visitor collapses in front of you.",
+      "steps": [
+        {
+          "prompt": "A person collapses in front of you. Per BLS, what are your first actions?",
+          "options": [
+            { "text": "Check for responsiveness and look for normal breathing — tap and shout, scan for breathing", "correct": true, "feedback": "Correct per BLS. Tap the shoulders and shout 'Are you okay?' Simultaneously scan for normal breathing (look for chest rise for no more than 10 seconds). Gasping is NOT normal breathing — treat gasping as cardiac arrest." },
+            { "text": "Start CPR immediately", "correct": false, "feedback": "You need to assess first. The person may have fainted and be breathing normally. Check responsiveness and breathing before starting CPR. This takes only seconds." },
+            { "text": "Call 911 first, then come back to check on them", "correct": false, "feedback": "Per BLS, check responsiveness and breathing first (takes seconds), then activate emergency response. If alone with a phone, put it on speaker while you assess and begin CPR." }
+          ]
+        },
+        {
+          "prompt": "The person is unresponsive and not breathing normally (only occasional gasps). Per BLS, what do you do?",
+          "options": [
+            { "text": "Activate emergency response, get AED, begin CPR starting with compressions (C-A-B)", "correct": true, "feedback": "Correct per BLS. Activate emergency response (call code or 911), send someone for an AED, and begin CPR with COMPRESSIONS first (C-A-B order, not A-B-C). If alone, use your phone on speaker to call while starting CPR. Begin with 30 compressions." },
+            { "text": "Open the airway and give 2 rescue breaths first (A-B-C)", "correct": false, "feedback": "Per current AHA BLS guidelines, the sequence is C-A-B (Compressions-Airway-Breathing), not A-B-C. Start with chest compressions. Compressions provide critical blood flow to the heart and brain — delaying them to open the airway worsens outcomes." },
+            { "text": "Check for a pulse before deciding what to do", "correct": false, "feedback": "Per BLS for healthcare providers, you can do a simultaneous pulse check while assessing breathing, but don't spend more than 10 seconds. For lay rescuers, pulse check is not recommended — unresponsive + not breathing normally = start CPR. The key is minimizing time to first compression." }
+          ]
+        },
+        {
+          "prompt": "You begin CPR. Per BLS, what are the parameters for high-quality adult compressions?",
+          "options": [
+            { "text": "Rate 100-120/min, depth at least 2 inches (5 cm), full recoil, minimize interruptions", "correct": true, "feedback": "Correct per BLS. The 5 components of high-quality CPR: (1) Rate 100-120/min (not too fast — >120 reduces filling time), (2) Depth at least 2 inches but no more than 2.4 inches, (3) Full chest recoil between compressions (don't lean), (4) Minimize interruptions (<10 sec for any pause), (5) Avoid excessive ventilation. Compression-to-ventilation ratio: 30:2 for 1 or 2 rescuers without advanced airway." },
+            { "text": "Rate as fast as possible, push as deep as possible", "correct": false, "feedback": "Both rate and depth have upper limits per BLS. Rate >120/min reduces ventricular filling time. Depth >2.4 inches increases injury risk. Quality matters more than speed — controlled, consistent compressions with full recoil." },
+            { "text": "Rate 80-100/min, depth 1-2 inches, pause every 15 compressions", "correct": false, "feedback": "Too slow and too shallow. Per BLS: rate 100-120/min, depth at least 2 inches. Ratio is 30:2 (30 compressions then 2 breaths), not pausing every 15." }
+          ]
+        },
+        {
+          "prompt": "The AED arrives. Per BLS, what do you do?",
+          "options": [
+            { "text": "Turn on AED, apply pads, let it analyze — minimize CPR interruption", "correct": true, "feedback": "Correct per BLS. Power on the AED and apply pads to bare chest (right clavicle, left lower ribs/axilla). Continue CPR while pads are being placed if possible. When AED says 'analyzing,' everyone clears the patient. If AED advises shock → clear and shock → immediately resume CPR for 2 minutes. If no shock advised → immediately resume CPR for 2 minutes." },
+            { "text": "Stop CPR, check for a pulse, then apply the AED", "correct": false, "feedback": "Minimize interruptions to CPR. You don't need to check a pulse before applying the AED — the AED will analyze the rhythm. Continue compressions while pads are placed if you have a second rescuer." },
+            { "text": "Apply pads and immediately press shock without waiting for analysis", "correct": false, "feedback": "The AED must analyze the rhythm first. Not all rhythms are shockable — shocking asystole or PEA provides no benefit. Let the AED analyze and follow its prompts. Press shock only when the AED advises it." }
           ]
         }
       ]
