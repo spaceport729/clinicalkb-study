@@ -66,6 +66,276 @@
           ]
         }
       ]
+    },
+    {
+      "id": "shortness-of-breath",
+      "chiefComplaint": "Shortness of Breath",
+      "arrival": "72F, progressive dyspnea x 3 days, worse lying flat, can't walk to bathroom without stopping",
+      "differentials": [
+        {
+          "diagnosis": "Acute Decompensated Heart Failure",
+          "conditionId": "acute-heart-failure",
+          "diagnostics": [
+            { "test": "BNP / NT-proBNP", "lookingFor": "BNP >400 strongly suggests HF; helps differentiate cardiac vs pulmonary dyspnea", "noteId": "cardiac-biomarkers" },
+            { "test": "CXR", "lookingFor": "Cardiomegaly, pulmonary edema (cephalization, Kerley B lines, pleural effusions)", "noteId": "cxr-interpretation" },
+            { "test": "ECG", "lookingFor": "Afib, LVH, ischemic changes — identify the trigger", "noteId": "ecg-interpretation" }
+          ],
+          "distinguishing": "Orthopnea, PND, bilateral crackles, JVD, peripheral edema, S3 gallop. History of HF, missed meds, dietary indiscretion (salt). BNP markedly elevated.",
+          "treatments": [
+            { "med": "Furosemide IV (home dose or 2.5x)", "why": "Loop diuretic removes excess volume — works in 5 min IV. Goal: net negative fluid balance", "noteId": "diuretics" },
+            { "med": "Nitroglycerin (SL or drip if severe)", "why": "Venodilation decreases preload rapidly — redistributes fluid out of lungs. First-line for acute pulmonary edema", "noteId": "nitrates" },
+            { "intervention": "BiPAP (non-invasive ventilation)", "why": "Positive pressure splints open alveoli, reduces work of breathing, decreases preload and afterload. Buys time while diuretics work" }
+          ]
+        },
+        {
+          "diagnosis": "COPD Exacerbation",
+          "conditionId": "chronic-obstructive-pulmonary-disease-copd",
+          "diagnostics": [
+            { "test": "ABG/VBG", "lookingFor": "Hypercapnia (elevated PaCO2), respiratory acidosis — indicates ventilatory failure", "noteId": "abg-and-vbg-interpretation" },
+            { "test": "CXR", "lookingFor": "Hyperinflation, flattened diaphragms. Rule out pneumonia, PTX as triggers", "noteId": "cxr-interpretation" }
+          ],
+          "distinguishing": "Known COPD, barrel chest, prolonged expiratory phase, diffuse wheezing or diminished breath sounds, pursed-lip breathing. Triggered by infection, missed inhalers, cold air.",
+          "treatments": [
+            { "med": "Albuterol + ipratropium nebs (back-to-back or continuous)", "why": "Beta-2 agonist + anticholinergic = dual bronchodilation. Give together for first 3 treatments in severe exacerbation", "noteId": "bronchodilators" },
+            { "med": "Methylprednisolone 125mg IV or prednisone 40mg PO", "why": "Systemic corticosteroids reduce airway inflammation — takes 4-6 hours for full effect. 5-day course, no taper needed", "noteId": "systemic-corticosteroids" },
+            { "intervention": "BiPAP if hypercapnic/tiring", "why": "Reduces work of breathing, supports ventilation, avoids intubation. Target SpO2 88-92% — don't over-oxygenate COPD patients" }
+          ]
+        },
+        {
+          "diagnosis": "Pneumonia",
+          "conditionId": "pneumonia",
+          "diagnostics": [
+            { "test": "CXR", "lookingFor": "Lobar consolidation, infiltrate, air bronchograms", "noteId": "cxr-interpretation" },
+            { "test": "Procalcitonin", "lookingFor": "Elevated suggests bacterial infection; helps guide antibiotic decisions" },
+            { "test": "Blood cultures + sputum culture", "lookingFor": "Identify organism and sensitivities for targeted therapy" }
+          ],
+          "distinguishing": "Productive cough, fever, focal crackles on auscultation, pleuritic chest pain. CXR shows infiltrate. May have leukocytosis.",
+          "treatments": [
+            { "med": "Ceftriaxone 1g IV + Azithromycin 500mg IV", "why": "Standard CAP coverage: ceftriaxone for typical organisms (Strep pneumo, H. flu), azithromycin for atypicals (Mycoplasma, Legionella)", "noteId": "antibiotics-overview" },
+            { "intervention": "Oxygen to maintain SpO2 ≥94%", "why": "Pneumonia causes V/Q mismatch → hypoxemia. Supplement oxygen as needed." }
+          ]
+        },
+        {
+          "diagnosis": "Pulmonary Embolism",
+          "conditionId": "pulmonary-embolism",
+          "diagnostics": [
+            { "test": "CT-PA", "lookingFor": "Filling defect in pulmonary artery", "noteId": "ct-interpretation" },
+            { "test": "D-dimer", "lookingFor": "If low clinical suspicion, negative D-dimer rules out PE", "noteId": "coagulation-studies" }
+          ],
+          "distinguishing": "Acute onset dyspnea + pleuritic chest pain + tachycardia with CLEAR lungs. Risk factors: immobility, recent surgery, OCP, cancer, prior DVT. Hypoxemia out of proportion to exam.",
+          "treatments": [
+            { "med": "Heparin drip (weight-based)", "why": "Prevents clot propagation. Start if high clinical suspicion — don't wait for CT", "noteId": "anticoagulants" },
+            { "intervention": "tPA for massive PE with hemodynamic instability", "why": "Fibrinolytic dissolves clot directly when patient is in obstructive shock from PE" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abdominal-pain",
+      "chiefComplaint": "Abdominal Pain",
+      "arrival": "38F, acute onset RLQ pain x 12 hours, nausea, one episode of vomiting, low-grade fever",
+      "differentials": [
+        {
+          "diagnosis": "Appendicitis",
+          "conditionId": "appendicitis",
+          "diagnostics": [
+            { "test": "CT abdomen/pelvis with contrast", "lookingFor": "Enlarged appendix >6mm, periappendiceal fat stranding, appendicolith", "noteId": "ct-interpretation" },
+            { "test": "CBC", "lookingFor": "Leukocytosis with left shift (elevated WBC, bandemia)", "noteId": "cbc-interpretation" },
+            { "test": "Urinalysis", "lookingFor": "Rule out UTI/kidney stone as mimic. Mild pyuria can occur with appendicitis (inflamed appendix near ureter)" }
+          ],
+          "distinguishing": "Classic migration: periumbilical pain → RLQ (McBurney's point). Anorexia, low-grade fever, rebound tenderness, guarding. Pain worsens with movement/coughing.",
+          "treatments": [
+            { "intervention": "Surgical consult for appendectomy", "why": "Definitive treatment is surgical removal — laparoscopic preferred. Do not delay for imaging if clinical picture is clear" },
+            { "med": "IV antibiotics (cefoxitin or pip-tazo)", "why": "Empiric coverage for GI flora. Given pre-op and if perforation suspected", "noteId": "antibiotics-overview" },
+            { "intervention": "NPO, IV fluids, pain management", "why": "Prep for OR. Don't withhold pain meds — treated pain doesn't mask surgical exam (evidence-based)" }
+          ]
+        },
+        {
+          "diagnosis": "Ectopic Pregnancy",
+          "conditionId": "ectopic-pregnancy",
+          "diagnostics": [
+            { "test": "Urine/serum hCG", "lookingFor": "Positive pregnancy test — ALWAYS check in reproductive-age females with abdominal pain" },
+            { "test": "Transvaginal ultrasound", "lookingFor": "Empty uterus + adnexal mass or free fluid with positive hCG = ectopic until proven otherwise" },
+            { "test": "CBC + Type & Screen", "lookingFor": "Baseline H/H for bleeding risk. T&S in case of rupture needing transfusion/surgery" }
+          ],
+          "distinguishing": "Reproductive-age female, missed period (may not realize she's pregnant), unilateral pelvic/lower abdominal pain, vaginal bleeding. If RUPTURED: peritoneal signs, tachycardia, hypotension — surgical emergency.",
+          "treatments": [
+            { "intervention": "Emergent OB/GYN consult if ruptured or hemodynamically unstable", "why": "Ruptured ectopic = surgical emergency. Hemoperitoneum can be rapidly fatal" },
+            { "med": "Methotrexate (if unruptured, <3.5cm, hCG <5000)", "why": "Medical management — inhibits rapidly dividing trophoblastic cells. Avoids surgery in stable, early ectopic" },
+            { "intervention": "2 large-bore IVs, Type & Crossmatch, RhoGAM if Rh-negative", "why": "Prepare for hemorrhage. RhoGAM prevents Rh sensitization in Rh-negative mothers" }
+          ]
+        },
+        {
+          "diagnosis": "Acute Pancreatitis",
+          "conditionId": "acute-pancreatitis",
+          "diagnostics": [
+            { "test": "Lipase", "lookingFor": "Elevated ≥3x upper limit of normal = diagnostic. More specific than amylase" },
+            { "test": "CT abdomen (with contrast if no AKI)", "lookingFor": "Pancreatic inflammation, necrosis, peripancreatic fluid collections. Not needed for diagnosis if lipase + clinical picture are clear" }
+          ],
+          "distinguishing": "Epigastric pain radiating to back, worse after eating, better leaning forward. Often alcohol or gallstone-related. Severe nausea/vomiting. Lipase markedly elevated.",
+          "treatments": [
+            { "intervention": "Aggressive IV fluid resuscitation (LR preferred)", "why": "Pancreatitis causes massive third-spacing. Early aggressive hydration (250-500 mL/hr initially) improves outcomes" },
+            { "intervention": "Pain control (IV opioids — fentanyl or hydromorphone)", "why": "Pancreatitis pain is severe. Morphine is acceptable despite old teaching about sphincter of Oddi spasm (debunked)" },
+            { "intervention": "NPO initially, early enteral feeding when tolerated", "why": "Old practice was prolonged NPO. Current evidence supports early oral feeding (within 24-48 hrs) if tolerated — improves gut barrier, reduces infection" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "altered-mental-status",
+      "chiefComplaint": "Altered Mental Status",
+      "arrival": "78M, found confused and agitated by family, normally alert and oriented, no witnessed event",
+      "differentials": [
+        {
+          "diagnosis": "Hypoglycemia",
+          "conditionId": "hypoglycemia",
+          "diagnostics": [
+            { "test": "Point-of-care glucose", "lookingFor": "Glucose <70 mg/dL. ALWAYS check glucose first in AMS — takes 5 seconds and is immediately treatable" },
+            { "test": "BMP", "lookingFor": "Confirm glucose, check electrolytes, renal function" }
+          ],
+          "distinguishing": "Diabetic on insulin or sulfonylureas, tremor, diaphoresis, tachycardia, confusion, seizure. May mimic stroke perfectly. FASTEST reversible cause of AMS.",
+          "treatments": [
+            { "med": "D50 (dextrose 50%) 25g IV push if IV access", "why": "Immediate glucose correction. Onset in seconds. Recheck glucose in 15 min — may need repeat" },
+            { "med": "Glucagon 1mg IM if no IV access", "why": "Stimulates hepatic glycogenolysis. Slower onset (10-15 min). Won't work if glycogen depleted (alcoholics, liver failure)" }
+          ]
+        },
+        {
+          "diagnosis": "Acute Ischemic Stroke",
+          "conditionId": "ischemic-stroke",
+          "diagnostics": [
+            { "test": "CT head non-contrast", "lookingFor": "Rule out hemorrhage. Ischemic stroke may be CT-negative early", "noteId": "ct-interpretation" },
+            { "test": "CT angiography", "lookingFor": "Large vessel occlusion for potential thrombectomy", "noteId": "ct-interpretation" },
+            { "test": "Glucose", "lookingFor": "Rule out hypoglycemia first — it mimics stroke" }
+          ],
+          "distinguishing": "Focal neurological deficits: face droop, arm drift, speech changes (BE-FAST). Sudden onset. LKN time is critical. Posterior strokes may present as isolated AMS/vertigo.",
+          "treatments": [
+            { "med": "Alteplase (tPA) within 4.5 hours of LKN", "why": "Fibrinolytic dissolves clot. 0.9 mg/kg, 10% bolus, rest over 60 min. Strict contraindication checklist" },
+            { "intervention": "Thrombectomy for large vessel occlusion (up to 24 hrs)", "why": "Mechanical clot retrieval. Dramatically better outcomes for LVO strokes. Requires transfer to comprehensive stroke center if not available" }
+          ]
+        },
+        {
+          "diagnosis": "Sepsis",
+          "conditionId": "sepsis",
+          "diagnostics": [
+            { "test": "Lactate", "lookingFor": "≥2 mmol/L indicates tissue hypoperfusion", "noteId": "bmp-and-cmp-interpretation" },
+            { "test": "Blood cultures x2, UA + culture", "lookingFor": "Identify source and organism" },
+            { "test": "CXR", "lookingFor": "Pneumonia as source", "noteId": "cxr-interpretation" }
+          ],
+          "distinguishing": "AMS may be the ONLY sign in elderly sepsis — they may not mount fever or tachycardia. Look for infection source: UTI (most common in elderly), pneumonia, skin/soft tissue. SIRS criteria.",
+          "treatments": [
+            { "intervention": "SEP-1 bundle: lactate, cultures, antibiotics within 1 hr, 30 mL/kg crystalloid if hypotensive", "why": "Every hour of delay in antibiotics increases mortality. Start the clock at recognition" },
+            { "med": "Broad-spectrum antibiotics (vanc + pip-tazo or cefepime)", "why": "Cover gram-positive, gram-negative, and anaerobes until cultures return", "noteId": "antibiotics-overview" }
+          ]
+        },
+        {
+          "diagnosis": "Delirium (non-septic)",
+          "conditionId": "delirium",
+          "diagnostics": [
+            { "test": "Comprehensive metabolic panel", "lookingFor": "Electrolyte derangements, renal failure, hepatic encephalopathy (ammonia)", "noteId": "bmp-and-cmp-interpretation" },
+            { "test": "Urinalysis", "lookingFor": "UTI — most common cause of delirium in elderly" },
+            { "test": "Medication reconciliation", "lookingFor": "New medications, anticholinergics, benzodiazepines, opioids — all cause delirium in elderly" }
+          ],
+          "distinguishing": "Acute onset, fluctuating course, inattention (can't spell WORLD backward, can't do months backward). DIFFERENT from dementia (chronic, stable). Always has an underlying CAUSE — find it.",
+          "treatments": [
+            { "intervention": "Treat the underlying cause", "why": "Delirium is a symptom, not a diagnosis. Fix the UTI, correct the sodium, stop the offending med, treat the pain" },
+            { "intervention": "Non-pharmacologic measures first: reorient, glasses/hearing aids, mobilize, sleep hygiene", "why": "Antipsychotics (haloperidol) only for severe agitation threatening safety. Benzos worsen delirium (except in alcohol withdrawal)" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fever",
+      "chiefComplaint": "Fever",
+      "arrival": "45M, T 39.2°C, rigors, tachycardia, looks sick, immunocompetent",
+      "differentials": [
+        {
+          "diagnosis": "Sepsis (undifferentiated source)",
+          "conditionId": "sepsis",
+          "diagnostics": [
+            { "test": "Lactate", "lookingFor": "≥2 = tissue hypoperfusion, ≥4 = severe sepsis/septic shock" },
+            { "test": "Blood cultures x2, UA, CXR", "lookingFor": "Pan-culture to identify source. Don't delay antibiotics for cultures" },
+            { "test": "CBC + CMP", "lookingFor": "Leukocytosis or leukopenia, bandemia, organ dysfunction (creatinine, bilirubin)" }
+          ],
+          "distinguishing": "Fever + SIRS criteria + suspected infection. Tachycardia, tachypnea, hypotension, AMS. Source may not be obvious initially — pan-culture and treat empirically.",
+          "treatments": [
+            { "intervention": "Hour-1 bundle: lactate, cultures, broad-spectrum antibiotics, 30 mL/kg fluid if hypotensive or lactate ≥4", "why": "Time-to-antibiotics is the most modifiable factor in sepsis survival" },
+            { "med": "Norepinephrine drip if MAP <65 after fluid resuscitation", "why": "First-line vasopressor for septic shock. Alpha-1 vasoconstriction restores SVR", "noteId": "vasopressors-and-inotropes" }
+          ]
+        },
+        {
+          "diagnosis": "Meningitis",
+          "conditionId": "meningitis",
+          "diagnostics": [
+            { "test": "Lumbar puncture (CSF analysis)", "lookingFor": "Elevated WBC (neutrophils = bacterial, lymphocytes = viral), elevated protein, decreased glucose (bacterial), gram stain + culture" },
+            { "test": "CT head before LP if indicated", "lookingFor": "Only if: AMS, focal neuro deficits, papilledema, immunocompromised, seizure. Do NOT delay antibiotics for CT/LP" },
+            { "test": "Blood cultures", "lookingFor": "Positive in ~50% of bacterial meningitis — get before antibiotics but don't delay" }
+          ],
+          "distinguishing": "Fever + headache + neck stiffness (nuchal rigidity). Photophobia, AMS, petechial rash (meningococcal). Kernig and Brudzinski signs (low sensitivity but specific). Can deteriorate rapidly.",
+          "treatments": [
+            { "med": "Ceftriaxone 2g IV + Vancomycin + Dexamethasone", "why": "Empiric bacterial coverage. Dexamethasone BEFORE or WITH first antibiotic dose — reduces inflammation, improves outcomes (especially Strep pneumo). Do NOT delay antibiotics for LP or CT", "noteId": "antibiotics-overview" },
+            { "intervention": "Droplet precautions until meningococcal ruled out", "why": "N. meningitidis is transmitted via respiratory droplets. Close contacts need prophylaxis (rifampin or ciprofloxacin)" }
+          ]
+        },
+        {
+          "diagnosis": "Pyelonephritis",
+          "conditionId": "urinary-tract-infection-and-pyelonephritis",
+          "diagnostics": [
+            { "test": "Urinalysis + urine culture", "lookingFor": "Pyuria, bacteriuria, positive nitrites, positive leukocyte esterase" },
+            { "test": "CBC + BMP", "lookingFor": "Leukocytosis, assess renal function (may have AKI from obstruction or sepsis)" }
+          ],
+          "distinguishing": "Fever + flank pain + costovertebral angle tenderness (CVA tenderness). Dysuria/frequency may or may not be present. More systemic than simple UTI — rigors, nausea, vomiting.",
+          "treatments": [
+            { "med": "Ceftriaxone 1g IV (if admitting) or fluoroquinolone PO (if discharging)", "why": "Cover gram-negative uropathogens (E. coli most common). Check local antibiogram for resistance patterns", "noteId": "antibiotics-overview" },
+            { "intervention": "IV fluids + antipyretics", "why": "Dehydration from fever/vomiting. Acetaminophen or ibuprofen for fever and comfort" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "syncope",
+      "chiefComplaint": "Syncope",
+      "arrival": "62M, witnessed collapse at church, brief LOC (~30 seconds), now alert and oriented, no seizure activity",
+      "differentials": [
+        {
+          "diagnosis": "Cardiac Syncope (arrhythmia)",
+          "conditionId": "dysrhythmias",
+          "diagnostics": [
+            { "test": "12-lead ECG", "lookingFor": "Bradycardia, heart block, prolonged QTc, Brugada pattern, WPW (delta wave), VT", "noteId": "ecg-interpretation" },
+            { "test": "Continuous cardiac monitoring", "lookingFor": "Intermittent arrhythmias that caused the syncope — may be paroxysmal" },
+            { "test": "Troponin", "lookingFor": "ACS as cause of arrhythmia", "noteId": "cardiac-biomarkers" }
+          ],
+          "distinguishing": "No prodrome (sudden), exertional syncope, palpitations before event, syncope while sitting/supine, family history of sudden cardiac death. ECG abnormalities. HIGH-RISK — admit for monitoring.",
+          "treatments": [
+            { "intervention": "Continuous cardiac monitoring + cardiology consult", "why": "Cardiac syncope has significant mortality risk. Need to identify and treat the arrhythmia" },
+            { "intervention": "If bradycardic: atropine → pacing per ACLS bradycardia algorithm", "why": "Symptomatic bradycardia causing syncope needs immediate rate support" }
+          ]
+        },
+        {
+          "diagnosis": "Vasovagal Syncope",
+          "conditionId": "syncope",
+          "diagnostics": [
+            { "test": "ECG", "lookingFor": "Normal — rules out cardiac cause", "noteId": "ecg-interpretation" },
+            { "test": "Orthostatic vitals", "lookingFor": "Drop ≥20 systolic or ≥10 diastolic on standing" }
+          ],
+          "distinguishing": "Clear prodrome: lightheadedness, warmth, nausea, tunnel vision, diaphoresis BEFORE the event. Triggered by prolonged standing, emotional stress, pain, heat. Brief LOC with rapid full recovery. BENIGN — but must rule out cardiac causes first.",
+          "treatments": [
+            { "intervention": "Reassurance + education on triggers and counterpressure maneuvers", "why": "Vasovagal syncope is benign. Teach: sit or lie down at prodrome onset, leg crossing with tensing, adequate hydration/salt intake" },
+            { "intervention": "Safe for discharge if ECG normal, no cardiac risk factors, classic prodrome", "why": "Low-risk syncope doesn't need admission. Follow up with PCP. Consider cardiology if recurrent." }
+          ]
+        },
+        {
+          "diagnosis": "Pulmonary Embolism",
+          "conditionId": "pulmonary-embolism",
+          "diagnostics": [
+            { "test": "CT-PA", "lookingFor": "Filling defect — syncope from PE indicates large/central clot with transient drop in cardiac output", "noteId": "ct-interpretation" },
+            { "test": "ECG", "lookingFor": "Sinus tach, S1Q3T3, right heart strain, new RBBB", "noteId": "ecg-interpretation" }
+          ],
+          "distinguishing": "Syncope + dyspnea + tachycardia. Risk factors for VTE. Syncope from PE = significant hemodynamic compromise from a large clot. High mortality if missed.",
+          "treatments": [
+            { "med": "Heparin drip immediately if high suspicion", "why": "Don't wait for CT if clinical picture strongly suggests PE with hemodynamic compromise", "noteId": "anticoagulants" }
+          ]
+        }
+      ]
     }
   ],
 
@@ -134,6 +404,70 @@
         "**Don't drop the BP too fast** — the hypertension is compensatory, maintaining perfusion to the penumbra. Only treat to get below thrombolytic thresholds.",
         "**Posterior circulation strokes are the ones we miss** — dizziness, nausea, ataxia, diplopia don't scream 'stroke' the way face/arm/speech do. Always consider it."
       ]
+    },
+    {
+      "id": "diabetic-ketoacidosis",
+      "title": "DKA",
+      "system": "endocrine-system",
+      "medClass": "insulin",
+      "overview": "Metabolic emergency from absolute or relative insulin deficiency. Hyperglycemia + ketoacidosis + dehydration. Most common in Type 1 DM but occurs in Type 2 with illness/stress. Mortality <1% with proper treatment, but mistreatment (especially K+ mismanagement) kills.",
+      "pathophysiology": "### The Cascade\n- **No insulin** = cells can't use glucose = glucose rises in blood\n- Body switches to **fat metabolism** = free fatty acids = hepatic ketogenesis = **ketone bodies**\n- Ketones are acids = **anion gap metabolic acidosis**\n- Hyperglycemia = **osmotic diuresis** = massive fluid loss (3-6L deficit typical)\n- Fluid loss = electrolyte depletion (K+, Na+, Phos, Mg2+)\n\n### The Potassium Trap\n- Total body K+ is DEPLETED from osmotic diuresis\n- But serum K+ may appear **normal or high** because acidosis shifts K+ out of cells\n- When you give insulin and correct acidosis, K+ shifts BACK into cells = **life-threatening hypokalemia**\n- **DO NOT give insulin if K+ <3.3** = replace K+ first",
+      "keyFeatures": "### Classic Triad\n- **Hyperglycemia** (usually >250, often >500)\n- **Ketosis** (positive ketones, elevated beta-hydroxybutyrate)\n- **Acidosis** (pH <7.3, bicarb <18, anion gap >12)\n\n### Presentation\n- Polyuria, polydipsia, nausea/vomiting, abdominal pain\n- **Kussmaul respirations** = deep, rapid breathing (compensatory)\n- **Fruity breath** (acetone)\n- Dehydration, tachycardia, altered mental status\n- **Find the trigger**: infection, missed insulin, new-onset DM, MI, steroids",
+      "management": "### MultiCare DKA Protocol\n- **Fluids first**: NS 1-2L bolus, then 250-500 mL/hr. Switch to D5 1/2 NS when glucose <200\n- **Potassium**: Check BEFORE insulin. K+ <3.3 = replace first, hold insulin. K+ 3.3-5.3 = add 20-40 mEq to each liter. K+ >5.3 = hold K+, recheck q2h\n- **Insulin drip**: 0.1-0.14 units/kg/hr. Goal: glucose drop 50-75/hr. Add dextrose when glucose <200. Do NOT stop insulin until anion gap closes\n- **Bicarb**: only if pH <6.9\n- **Monitor**: BMP q2h, glucose q1h, strict I&O",
+      "nursingPriorities": "- **Check K+ BEFORE starting insulin** = life-saving step\n- **Two IVs** = one for fluids, one for insulin drip\n- **Hourly glucose checks** = titrate insulin to drop 50-75/hr\n- **BMP every 2 hours** = watching K+, bicarb, anion gap\n- **Continuous cardiac monitoring** = K+ shifts cause arrhythmias\n- **Keep insulin drip until gap closes** = overlap SubQ insulin 2hr before stopping drip\n- **Find the trigger** = why did they go into DKA?",
+      "pearls": [
+        "**Check potassium before insulin, every single time.** Giving insulin to a hypokalemic patient can kill them.",
+        "**Don't stop the insulin drip when glucose normalizes** = the goal is to close the anion gap. Add dextrose and keep the drip running.",
+        "**Abdominal pain in DKA is often the DKA itself**, not a surgical abdomen. It resolves with treatment."
+      ]
+    },
+    {
+      "id": "anaphylaxis",
+      "title": "Anaphylaxis",
+      "system": "lymphatic-and-immune-system",
+      "medClass": "bronchodilators",
+      "overview": "Severe, life-threatening systemic allergic reaction. IgE-mediated mast cell degranulation causes vasodilation, bronchoconstriction, mucosal edema. Can kill in minutes. EPINEPHRINE IS THE TREATMENT.",
+      "pathophysiology": "### Type I Hypersensitivity\n- Prior sensitization = IgE antibodies on mast cells\n- Re-exposure = antigen cross-links IgE = **mast cell degranulation**\n- **Histamine, leukotrienes, prostaglandins** released:\n  - Vasodilation = distributive shock\n  - Bronchoconstriction = wheezing, respiratory distress\n  - Mucosal edema = airway swelling\n  - Capillary leak = urticaria, third-spacing\n- Biphasic reactions in 5-20% = can recur 4-12 hours later",
+      "keyFeatures": "### Diagnostic Criteria\n- Skin/mucosal involvement (hives, angioedema) + respiratory compromise OR hypotension\n- Two or more rapidly after allergen: skin, respiratory, GI, hypotension\n- Hypotension after KNOWN allergen\n\n### Common Triggers\n- Foods (peanuts, shellfish, tree nuts)\n- Medications (antibiotics, NSAIDs, contrast)\n- Insect stings (bees, wasps)\n- Latex",
+      "management": "### EPINEPHRINE FIRST\n- **Epi 0.3-0.5 mg IM** anterolateral thigh. Repeat q5-15 min if no improvement\n- **Epi drip** 1-10 mcg/min for refractory cases\n\n### Adjuncts (AFTER epi)\n- IV fluids = aggressive for distributive shock\n- Albuterol neb = for bronchospasm\n- Diphenhydramine 50mg IV = treats urticaria, NOT first-line\n- Methylprednisolone 125mg IV = may reduce biphasic reaction\n- Prepare for intubation if airway edema progressing",
+      "nursingPriorities": "- **EPI FIRST** = IM anterolateral thigh. Nothing else matters until epi is given\n- **Two large-bore IVs** = fluids wide open for shock\n- **Continuous monitoring** = watch for airway compromise\n- **Observe 4-6 hours** = biphasic reactions\n- **Before discharge**: epi auto-injector Rx, allergy referral, action plan",
+      "pearls": [
+        "**Epi is first, epi is second, epi is third.** Benadryl is for hives, not anaphylaxis.",
+        "**IM in the thigh, not subQ in the arm.** Anterolateral thigh has fastest absorption.",
+        "**Observe 4-6 hours** = biphasic reactions in 5-20% of patients."
+      ]
+    },
+    {
+      "id": "atrial-fibrillation",
+      "title": "Atrial Fibrillation",
+      "system": "cardiovascular-system",
+      "medClass": "beta-blockers",
+      "overview": "Most common sustained arrhythmia. Disorganized atrial electrical activity causes irregular, often rapid ventricular response. Major stroke risk from atrial thrombus formation.",
+      "pathophysiology": "### Electrical Chaos\n- Multiple re-entrant wavelets in atria = chaotic depolarization (350-600/min)\n- AV node filters irregularly = **irregularly irregular** ventricular rate\n- Loss of organized atrial contraction = blood **stasis** = thrombus = stroke\n\n### Hemodynamic Impact\n- Loss of atrial kick (15-25% of CO)\n- Rapid rate = decreased diastolic filling = decreased CO\n- Chronic uncontrolled = tachycardia-mediated cardiomyopathy",
+      "keyFeatures": "### ECG\n- **No P waves** = fibrillatory baseline\n- **Irregularly irregular** R-R intervals\n- Narrow QRS (unless aberrancy or BBB)\n\n### Presentation\n- Palpitations, dyspnea, fatigue\n- If RVR: chest pain, dizziness, near-syncope\n- May be asymptomatic (incidental finding)\n- Stroke may be the presenting event",
+      "management": "### Stable or Unstable?\n- Unstable (hypotension, AMS, chest pain) = synchronized cardioversion per ACLS\n\n### Rate Control\n- **Diltiazem** 0.25 mg/kg IV over 2 min, drip 5-15 mg/hr (first-line)\n- **Metoprolol** 5mg IV q5min x3 (alternative, preferred in HFrEF)\n- Target HR <110\n\n### Rhythm Control\n- Afib <48 hours = may cardiovert\n- >48 hours or unknown = need 3+ weeks anticoagulation OR TEE first\n\n### Anticoagulation\n- CHA2DS2-VASc score determines need\n- Most afib patients need long-term anticoagulation (DOAC preferred)",
+      "nursingPriorities": "- **Rate control is the ED priority** = get HR <110\n- **Diltiazem drip**: monitor BP, hold if SBP <90\n- **Do NOT cardiovert unknown-duration afib** without anticoag or TEE = stroke risk\n- **Look for the trigger**: thyroid, PE, sepsis, alcohol, missed meds\n- **Anticoagulation discussion before discharge**",
+      "pearls": [
+        "**New afib = always ask WHY.** Afib is often a symptom of PE, sepsis, thyroid storm, acute HF, or alcohol.",
+        "**Never give diltiazem to afib with WPW** (delta waves on ECG). Forces conduction down accessory pathway = can degenerate to VFib.",
+        "**Afib with RVR is rate control, not cardioversion** (unless unstable)."
+      ]
+    },
+    {
+      "id": "hyperkalemia",
+      "title": "Hyperkalemia",
+      "system": "renal-system",
+      "medClass": "diuretics",
+      "overview": "Serum K+ >5.0. Life-threatening when >6.0 or with ECG changes. The heart is exquisitely sensitive to potassium. Treat the ECG, not just the number.",
+      "pathophysiology": "### Why It's Dangerous\n- Elevated K+ = resting membrane potential less negative = cells easier to depolarize initially\n- Higher levels = Na+ channels inactivate = conduction slows = cardiac arrest\n- ECG progression: **peaked T waves = PR prolongation = widened QRS = sine wave = VFib/asystole**\n\n### Common Causes\n- **Renal failure** (most common)\n- **Medications**: ACE-I, ARBs, K+-sparing diuretics, NSAIDs, TMP-SMX\n- **Cell lysis**: rhabdo, tumor lysis, hemolysis, burns\n- **Acidosis**: H+ in, K+ out",
+      "keyFeatures": "### ECG Changes (progressive)\n- 5.5-6.0: Peaked T waves\n- 6.0-7.0: PR prolongation, flattened P waves\n- 7.0-8.0: Widened QRS\n- >8.0: Sine wave = VFib = asystole\n\n### Symptoms\n- Often **asymptomatic** until cardiac arrest\n- Weakness, paresthesias, nausea",
+      "management": "### Three Categories\n**1. STABILIZE** (minutes)\n- **Calcium gluconate 10mL of 10% IV over 2-3 min** = does NOT lower K+, stabilizes heart\n\n**2. SHIFT** (15-30 min, temporary)\n- **Insulin 10 units IV + D50 25g** = most effective. ALWAYS give dextrose\n- **Albuterol 10-20mg neb** = adjunct\n- **Bicarb** = only if acidotic\n\n**3. REMOVE** (hours, definitive)\n- **Furosemide** = if kidneys work\n- **Kayexalate** = slow, controversial\n- **Dialysis** = definitive for renal failure",
+      "nursingPriorities": "- **12-lead ECG immediately** = peaked T waves = treat NOW\n- **Calcium gluconate at bedside** if K+ >6.0\n- **Give insulin AND dextrose together** = check glucose q30 min\n- **Continuous cardiac monitoring**\n- **Recheck K+ in 1-2 hours** = shift treatments are temporary\n- **Avoid K+-containing fluids (LR)** until resolved",
+      "pearls": [
+        "**Calcium gluconate is a membrane stabilizer, not a K+ treatment.** It buys time while insulin/glucose shifts K+ into cells.",
+        "**Always give dextrose with insulin.** Insulin without dextrose = hypoglycemia.",
+        "**Peaked T waves = calcium gluconate immediately.** Don't wait for the lab."
+      ]
     }
   ],
 
@@ -164,6 +498,24 @@
       "clinicalAssessment": "### Rapid Neuro Assessment\n- **GCS**: Eye (4) + Verbal (5) + Motor (6) = 3-15. ≤8 = cannot protect airway\n- **Pupils**: size, shape, reactivity. Fixed/dilated = CN III compression = herniation\n- **BE-FAST**: Balance, Eyes, Face, Arm, Speech, Time\n- **NIHSS**: 11-item stroke severity scale (0-42)\n\n### Motor/Sensory\n- Strength: 0/5 (no movement) to 5/5 (full against resistance)\n- **Pronator drift**: arms out, palms up, eyes closed — subtle weakness causes pronation and drift\n\n### Reflexes\n- **Babinski**: upgoing toe = upper motor neuron lesion (normal in infants)\n- **DTRs**: 0-4+ scale, 2+ = normal",
       "labValues": "- **CT head (non-contrast)**: first-line for stroke, hemorrhage, mass. Ischemic stroke may be negative initially\n- **CT angiography**: identifies large vessel occlusion for thrombectomy\n- **Blood glucose**: ALWAYS check — hypoglycemia mimics stroke perfectly\n- **PT/INR**: needed before tPA (must be ≤1.7)\n- **CSF analysis**: if meningitis suspected (cell count, glucose, protein, gram stain, culture)\n- **EEG**: seizure activity, status epilepticus\n- **Troponin**: elevated in SAH and severe TBI (neurogenic stunned myocardium)",
       "clinicalConnection": "In ischemic stroke: MCA occlusion → contralateral face/arm weakness + speech deficit (if dominant hemisphere). Time is brain — 1.9 million neurons die per minute of occlusion. The penumbra (ischemic but salvageable tissue) is what tPA and thrombectomy aim to rescue. BP management is critical: too-aggressive lowering worsens penumbral perfusion."
+    },
+    {
+      "id": "endocrine-system",
+      "title": "Endocrine System",
+      "keyStructures": "### Key Glands\n- **Hypothalamus**: master regulator, links nervous and endocrine systems\n- **Pituitary**: anterior (TSH, ACTH, GH, FSH, LH, prolactin) and posterior (ADH, oxytocin)\n- **Thyroid**: T3/T4 (metabolism), calcitonin (calcium)\n- **Parathyroid**: PTH (raises calcium)\n- **Adrenal cortex**: cortisol (stress), aldosterone (Na+/K+), androgens\n- **Adrenal medulla**: epinephrine, norepinephrine (sympathetic)\n- **Pancreas**: insulin (beta cells, lowers glucose), glucagon (alpha cells, raises glucose)\n\n### Feedback Axis\n- Hypothalamus → releasing hormone → pituitary → stimulating hormone → target gland → hormone → negative feedback to hypothalamus/pituitary",
+      "normalPhysiology": "### Glucose Regulation\n- **Insulin** (beta cells): glucose uptake into cells, glycogen synthesis, fat storage. The ONLY hormone that lowers glucose.\n- **Glucagon** (alpha cells): glycogenolysis, gluconeogenesis. Raises glucose.\n- **Counter-regulatory hormones** (cortisol, epinephrine, GH): all raise glucose during stress\n\n### Thyroid\n- T4 (thyroxine) → converted to T3 (active form) in tissues\n- Controls basal metabolic rate, HR, temperature, energy\n- TSH feedback: low T3/T4 → high TSH (hypothyroid). High T3/T4 → low TSH (hyperthyroid)\n\n### Adrenal\n- **Cortisol**: stress response, anti-inflammatory, glucose mobilization\n- **Aldosterone**: Na+ retention, K+ excretion in kidneys (RAAS system)\n- Adrenal insufficiency = can't mount stress response = cardiovascular collapse",
+      "clinicalAssessment": "### Blood Glucose\n- Always check in AMS, seizure, weakness, diaphoresis\n- Hypoglycemia (<70): tremor, diaphoresis, confusion, seizure\n- Hyperglycemia (>250 + ketones + acidosis = DKA)\n\n### Thyroid\n- Hyperthyroid: tachycardia, tremor, weight loss, heat intolerance, exophthalmos (Graves)\n- Hypothyroid: bradycardia, fatigue, weight gain, cold intolerance, myxedema\n- Thyroid storm: extreme hyperthyroidism + fever + tachycardia + AMS = emergency\n\n### Adrenal\n- Adrenal crisis: hypotension refractory to fluids/vasopressors + hyponatremia + hyperkalemia. Give hydrocortisone 100mg IV.",
+      "labValues": "- **Glucose**: fasting 70-100. Random >200 + symptoms = diabetes\n- **HbA1c**: 3-month glucose average. <5.7% normal, 5.7-6.4% prediabetes, ≥6.5% diabetes\n- **TSH**: 0.5-5.0 mIU/L. High = hypothyroid, Low = hyperthyroid (confusing but remember: feedback)\n- **Cortisol**: AM 6-23 mcg/dL. Random cortisol <3 in critical illness = adrenal insufficiency\n- **BMP**: glucose, Na+, K+ (aldosterone effects)\n- **Anion gap**: elevated in DKA (ketoacids)\n- **Beta-hydroxybutyrate**: direct ketone measurement (better than urine ketones)",
+      "clinicalConnection": "In DKA: no insulin → glucose can't enter cells → hyperglycemia → osmotic diuresis → dehydration. Fat is metabolized instead → ketones → anion gap metabolic acidosis. The potassium trap: total body K+ is depleted but serum K+ may look normal because acidosis shifts K+ extracellularly. Giving insulin drives K+ back into cells → potentially fatal hypokalemia."
+    },
+    {
+      "id": "renal-system",
+      "title": "Renal System",
+      "keyStructures": "### Kidney Anatomy\n- 2 kidneys, retroperitoneal, ~1 million nephrons each\n- **Nephron**: functional unit = glomerulus + tubule system\n- **Glomerulus**: filters blood (180 L/day → reabsorbs 99% → 1-2 L urine)\n- **Tubules**: PCT (reabsorbs 65% of filtrate), Loop of Henle (concentrates urine), DCT, Collecting duct\n\n### Key Structures\n- **Afferent arteriole** → glomerulus → **efferent arteriole** (this arrangement creates filtration pressure)\n- **Juxtaglomerular apparatus**: renin-secreting cells that sense perfusion pressure → trigger RAAS\n- **Ureters → bladder → urethra**: drainage system",
+      "normalPhysiology": "### Kidney Functions\n- **Filter waste**: creatinine, BUN, toxins, drug metabolites\n- **Regulate volume**: Na+ and H2O reabsorption/excretion\n- **Regulate electrolytes**: K+, Ca2+, Phos, Mg2+\n- **Acid-base balance**: HCO3- reabsorption, H+ excretion\n- **Hormone production**: erythropoietin (RBC production), activated vitamin D (calcium absorption), renin (BP regulation)\n\n### GFR\n- Glomerular Filtration Rate = how well the kidneys filter\n- Normal: >90 mL/min\n- Creatinine is the surrogate marker — rising creatinine = falling GFR\n\n### Diuretic Sites of Action\n- **Loop diuretics** (furosemide): Loop of Henle, Na-K-2Cl cotransporter. Most potent.\n- **Thiazides** (HCTZ): DCT, Na-Cl cotransporter. Moderate.\n- **K+-sparing** (spironolactone): Collecting duct, aldosterone antagonist. Weak diuretic but saves K+.",
+      "clinicalAssessment": "### Urine Output\n- Normal: 0.5-1.0 mL/kg/hr\n- Oliguria: <0.5 mL/kg/hr — concerning for AKI\n- Anuria: <100 mL/24hr — obstruction or severe AKI\n\n### Fluid Assessment\n- Overloaded: edema, JVD, crackles, weight gain\n- Depleted: tachycardia, hypotension, dry mucous membranes, decreased skin turgor\n\n### Key Labs\n- **BUN/Creatinine ratio**: >20:1 suggests prerenal (dehydration, HF), <20:1 suggests intrinsic renal\n- Electrolytes: hyperkalemia is the killer in renal failure",
+      "labValues": "- **Creatinine**: 0.7-1.3 mg/dL. Rising creatinine = declining kidney function\n- **BUN**: 7-20 mg/dL. Rises with dehydration, GI bleed, high protein, renal failure\n- **GFR**: >90 normal, <60 = CKD stage 3, <15 = ESRD (needs dialysis)\n- **Potassium**: 3.5-5.0. Renal failure causes hyperkalemia (can't excrete K+)\n- **Urinalysis**: specific gravity (concentration), protein (glomerular damage), blood, WBCs (infection), casts\n- **Urine electrolytes**: FENa <1% = prerenal, >2% = intrinsic renal",
+      "clinicalConnection": "In hyperkalemia from renal failure: kidneys can't excrete K+ → serum K+ rises → cardiac membrane destabilization → arrhythmias. Loop diuretics help if the patient still makes urine. If oliguric/anuric, dialysis is the definitive treatment. Many ED medications are renally cleared — dose adjust everything."
     }
   ],
 
@@ -212,6 +564,63 @@
       ],
       "adverseEffects": "- **Beta-lactams**: allergic reactions (cross-reactivity ~2% pen → ceph), C. diff risk, seizures (high dose or renal failure)\n- **Vancomycin**: nephrotoxicity (especially with piperacillin-tazobactam combo), red man syndrome, ototoxicity\n- **Fluoroquinolones**: tendon rupture, QTc prolongation, aortic dissection risk, peripheral neuropathy — BLACK BOX warning, use only when no alternative\n- **Aminoglycosides**: nephrotoxicity, ototoxicity — monitor levels\n- **ALL**: C. difficile risk, resistance development",
       "nursingConsiderations": "- **Culture before you treat** — but don't delay antibiotics for cultures in sepsis\n- **Allergy history is critical** — true penicillin allergy (anaphylaxis, hives) vs intolerance (GI upset). Cross-reactivity with cephalosporins is ~2%, not 10% as previously taught\n- **Time matters in sepsis** — every hour of delay in antibiotics increases mortality. Draw cultures, hang antibiotics, don't wait for pharmacy\n- **Renal dosing** — many antibiotics need dose adjustment for renal impairment (vancomycin, aminoglycosides, carbapenems)\n- **Monitor for C. diff** — new diarrhea on antibiotics = send stool sample\n- **Complete the course** — undertreating breeds resistance"
+    },
+    {
+      "id": "beta-blockers",
+      "title": "Beta-Blockers",
+      "moa": "Block beta-adrenergic receptors, reducing sympathetic stimulation:\n- **Beta-1** (heart): decrease HR (chronotropy), decrease contractility (inotropy), decrease AV conduction (dromotropy), decrease renin release\n- **Beta-2** (lungs, vessels): bronchodilation, vasodilation. Blocking beta-2 = bronchoconstriction (why beta-blockers are cautious in asthma)\n\nSelective (cardioselective) agents: metoprolol, atenolol, esmolol — preferentially block beta-1. Selectivity is dose-dependent.\nNon-selective: propranolol, carvedilol, labetalol — block both beta-1 and beta-2. Labetalol also blocks alpha-1.",
+      "fdaUses": ["Heart failure with reduced EF (carvedilol, metoprolol succinate, bisoprolol)", "Rate control (afib, aflutter, SVT)", "Hypertension", "Post-MI secondary prevention", "Angina (reduce myocardial O2 demand)"],
+      "nonFdaUses": ["Thyroid storm (propranolol — blocks peripheral T4→T3 conversion)", "Aortic dissection (esmolol — rate and BP control)", "Portal hypertension/variceal prophylaxis (propranolol, nadolol)", "Performance anxiety (propranolol)"],
+      "edDrugs": [
+        { "name": "Metoprolol (Lopressor/Toprol)", "dose": "IV: 5mg q5min x3. PO tartrate: 25-100mg BID. PO succinate: 25-200mg daily", "why": "Tartrate = short-acting for acute rate control. Succinate = extended-release for chronic HF (ONLY succinate has mortality benefit in HFrEF). Most commonly used beta-blocker in the ED." },
+        { "name": "Esmolol (Brevibloc)", "dose": "500 mcg/kg bolus over 1 min, then 50-200 mcg/kg/min drip", "why": "Ultra-short acting (half-life 9 min). Perfect when you need rate/BP control but are worried about side effects — if patient crashes, stop drip and it clears in minutes. First-line for aortic dissection." },
+        { "name": "Labetalol", "dose": "10-20mg IV push q10min (max 300mg), or drip 0.5-2 mg/min", "why": "Alpha + beta blockade = both HR and BP control. Good for hypertensive emergencies, preeclampsia. Don't use in acute decompensated HF (negative inotropy without alpha blockade compensation)." },
+        { "name": "Propranolol", "dose": "1mg IV q2min (max 3mg for SVT). PO: 10-40mg TID-QID", "why": "Non-selective. Used in thyroid storm (blocks peripheral T4→T3 AND controls HR). Lipophilic = crosses BBB = helps with anxiety, tremor." }
+      ],
+      "adverseEffects": "Bradycardia, hypotension, bronchospasm (beta-2 blockade — caution in asthma/COPD), fatigue, depression, masking of hypoglycemia symptoms (blocks tachycardia response), sexual dysfunction, rebound tachycardia if stopped abruptly.",
+      "nursingConsiderations": "- **Hold if HR <60 or SBP <90** — assess before each dose\n- **Do NOT give in acute decompensated HF** — negative inotropy worsens pump failure. Beta-blockers are for STABLE chronic HFrEF only.\n- **Asthma/COPD caution** — beta-1 selective agents (metoprolol) are safer but selectivity is dose-dependent\n- **Do NOT stop abruptly** — rebound tachycardia/hypertension, can precipitate MI. Taper over 1-2 weeks\n- **Monitor glucose in diabetics** — beta-blockers mask hypoglycemia symptoms (tremor, tachycardia)\n- **Esmolol drip**: dedicated line, titrate to HR goal, watch BP closely"
+    },
+    {
+      "id": "insulin",
+      "title": "Insulin",
+      "moa": "Binds insulin receptors on cell membranes → activates GLUT4 transporters → glucose uptake into cells. Also:\n- Promotes glycogen synthesis (stores glucose)\n- Promotes fat storage (lipogenesis)\n- Promotes protein synthesis\n- **Shifts K+ into cells** (clinically important — used to treat hyperkalemia)\n- Inhibits hepatic gluconeogenesis and glycogenolysis\n\nTypes differ by **onset, peak, and duration** — from rapid-acting (minutes) to long-acting (24+ hours).",
+      "fdaUses": ["Type 1 diabetes (absolute requirement)", "Type 2 diabetes (when oral agents fail)", "DKA/HHS management (IV insulin drip)", "Hyperkalemia (shifts K+ intracellularly)", "TPN/parenteral nutrition glucose management"],
+      "nonFdaUses": ["Calcium channel blocker overdose (high-dose insulin/euglycemic therapy — insulin has inotropic effects)", "Beta-blocker overdose (same mechanism)"],
+      "edDrugs": [
+        { "name": "Regular insulin (Humulin R)", "dose": "DKA drip: 0.1-0.14 units/kg/hr. Hyperkalemia: 10 units IV + D50 25g. SubQ sliding scale: varies", "why": "The ONLY insulin given IV. Used for DKA drips and hyperkalemia. Clear solution — do NOT confuse with other insulin types." },
+        { "name": "Insulin lispro (Humalog) / aspart (NovoLog)", "dose": "SubQ: per sliding scale or carb counting. Onset 15 min, peak 1-2 hr, duration 3-5 hr", "why": "Rapid-acting — used for meal coverage and correction doses. Given SubQ only. Used in insulin pumps." },
+        { "name": "Insulin glargine (Lantus) / detemir (Levemir)", "dose": "SubQ: once daily (glargine) or BID (detemir). Dose varies by patient", "why": "Long-acting basal insulin. Provides 24-hour baseline coverage. No peak (glargine) — reduces hypoglycemia risk. Never give IV. Never adjust in the ED without endocrine guidance." }
+      ],
+      "adverseEffects": "**Hypoglycemia** is the major and potentially fatal adverse effect. Weight gain. Injection site lipodystrophy. Hypokalemia (when used for hyperkalemia — always co-administer dextrose).",
+      "nursingConsiderations": "- **DKA drip**: check glucose hourly, BMP q2h, check K+ BEFORE starting. Goal glucose drop 50-75/hr — if dropping faster, reduce rate. Do NOT stop until anion gap closes.\n- **Hyperkalemia**: 10 units regular + D50 25g together. Recheck glucose q30 min (hypoglycemia risk). Recheck K+ q1-2h (effect is temporary).\n- **Sliding scale**: check glucose before meals and at bedtime. Give correction dose per protocol. Notify provider if glucose >300 or <70.\n- **Never give long-acting insulin IV** — it's designed for SubQ absorption\n- **High-alert medication** — always have a second nurse verify dose and type. Insulin errors are a leading cause of inpatient medication harm."
+    },
+    {
+      "id": "bronchodilators",
+      "title": "Bronchodilators",
+      "moa": "Open airways through two mechanisms:\n- **Beta-2 agonists** (SABA/LABA): stimulate beta-2 receptors on bronchial smooth muscle → relaxation → bronchodilation. Also increase mucociliary clearance.\n- **Anticholinergics** (SAMA/LAMA): block muscarinic M3 receptors → reduce acetylcholine-mediated bronchoconstriction and mucus secretion.\n\nSABA/SAMA = short-acting rescue. LABA/LAMA = long-acting maintenance.",
+      "fdaUses": ["Asthma (SABA rescue + ICS/LABA maintenance)", "COPD (SAMA/LAMA + LABA maintenance, SABA rescue)", "Acute bronchospasm", "Exercise-induced bronchospasm (SABA pre-treatment)"],
+      "nonFdaUses": ["Hyperkalemia (high-dose albuterol neb as K+ shifter)", "Croup (nebulized racemic epinephrine)"],
+      "edDrugs": [
+        { "name": "Albuterol (ProAir, Ventolin)", "dose": "Neb: 2.5 mg q4-6h PRN; acute: q20min x3 or continuous. MDI: 2 puffs q4-6h", "why": "SABA — the rescue inhaler. Fastest-acting bronchodilator (onset 5 min). First-line for all acute bronchospasm. Side effects: tachycardia, tremor, hypokalemia." },
+        { "name": "Ipratropium (Atrovent)", "dose": "Neb: 0.5 mg q6-8h; MDI: 2 puffs QID", "why": "SAMA — anticholinergic. Slower onset (15-30 min). Add to albuterol for first 3 nebs in severe asthma/COPD exacerbation. DuoNeb = albuterol + ipratropium combo." },
+        { "name": "Racemic epinephrine", "dose": "Neb: 0.5 mL of 2.25% solution in 3 mL NS", "why": "Alpha-mediated mucosal vasoconstriction reduces airway edema. Used for croup (stridor) and post-extubation stridor. Monitor for rebound swelling 2-4 hours after administration." }
+      ],
+      "adverseEffects": "Beta-2 agonists: tachycardia, tremor, hypokalemia (drives K+ into cells), hyperglycemia, anxiety. Anticholinergics: dry mouth, urinary retention, narrow-angle glaucoma risk (nebulized — use mouthpiece or mask that avoids eyes).",
+      "nursingConsiderations": "- **Albuterol continuous neb** for severe asthma: monitor HR (will be tachycardic), K+ (can drop significantly)\n- **Ipratropium + albuterol** for first 3 treatments in severe exacerbation, then albuterol alone\n- **Assess response**: breath sounds, work of breathing, SpO2, peak flow (if able). Improving = good. Silent chest = bad (not enough air movement to wheeze)\n- **COPD: target SpO2 88-92%** — don't blast them with 100% O2 (blunts hypoxic drive, worsens V/Q mismatch)\n- **Spacer for MDIs** — dramatically improves drug delivery. If patient can't coordinate MDI, use neb"
+    },
+    {
+      "id": "diuretics",
+      "title": "Diuretics",
+      "moa": "Increase urine output by blocking sodium reabsorption at different points in the nephron:\n- **Loop diuretics** (furosemide, bumetanide): block Na-K-2Cl cotransporter in thick ascending limb of Loop of Henle. Most potent. Waste K+, Ca2+, Mg2+.\n- **Thiazides** (HCTZ, chlorthalidone): block Na-Cl cotransporter in distal convoluted tubule. Moderate potency. Waste K+, retain Ca2+.\n- **K+-sparing** (spironolactone, eplerenone): block aldosterone in collecting duct. Weak diuretic. Save K+. Spironolactone has mortality benefit in HFrEF.\n- **Osmotic** (mannitol): osmotic gradient draws water into tubule. Used for cerebral edema.",
+      "fdaUses": ["Heart failure (loop diuretics for volume overload)", "Hypertension (thiazides first-line)", "Edema (nephrotic syndrome, cirrhosis)", "HFrEF mortality reduction (spironolactone/eplerenone)", "Cerebral edema (mannitol, hypertonic saline)"],
+      "nonFdaUses": ["Hyperkalemia (furosemide enhances K+ excretion)", "Hypercalcemia (furosemide + NS for calciuresis)", "Ascites (spironolactone + furosemide in 100:40 ratio for cirrhosis)"],
+      "edDrugs": [
+        { "name": "Furosemide (Lasix)", "dose": "IV: 20-80mg; acute HF: home PO dose given IV, or 2.5x if no response. Max single dose ~200mg", "why": "Workhorse loop diuretic. IV onset 5 min, PO 30-60 min. 'Lasix = lasts six hours.' First-line for acute decompensated HF and pulmonary edema." },
+        { "name": "Bumetanide (Bumex)", "dose": "IV/PO: 0.5-2mg. 1mg bumetanide = 40mg furosemide", "why": "40x more potent mg-for-mg than furosemide. Better oral bioavailability. Used when furosemide response is inadequate (gut edema impairs absorption)." },
+        { "name": "Spironolactone (Aldactone)", "dose": "HF: 25-50mg PO daily. Ascites: 100mg PO daily (with furosemide 40mg)", "why": "Aldosterone antagonist — K+-sparing. Mortality benefit in HFrEF (RALES trial). Also first-line for cirrhotic ascites. Monitor K+ closely — hyperkalemia risk." }
+      ],
+      "adverseEffects": "Loop: hypokalemia, hypomagnesemia, hypocalcemia, ototoxicity (rapid IV push), dehydration, metabolic alkalosis. Thiazides: hypokalemia, hyponatremia, hyperuricemia (gout), hypercalcemia. K+-sparing: hyperkalemia, gynecomastia (spironolactone).",
+      "nursingConsiderations": "- **Monitor K+ and Mg2+** with all loop/thiazide diuretics. Replace aggressively.\n- **Strict I&O** — document urine output after each dose. Poor response = may need higher dose or continuous drip\n- **Daily weights** — most accurate measure of fluid balance (1 kg = 1 liter)\n- **IV push furosemide slowly** (over 1-2 min) — rapid push causes ototoxicity\n- **Assess for dehydration** — overdiuresis causes prerenal AKI, hypotension\n- **Spironolactone + ACE inhibitor** = hyperkalemia risk. Check K+ within 1 week of starting"
     }
   ],
 
@@ -225,6 +634,46 @@
       "atTheBedside": "### Peaked T Waves → Think Hyperkalemia\n- **Calcium gluconate** is first-line — stabilizes the cardiac membrane (raises threshold potential) without changing K+ level\n- Buys you time while **insulin/glucose** and other treatments shift K+ back into cells\n- It's a **membrane stabilizer**, not a K+ treatment\n\n### Torsades de Pointes → Give Magnesium\n- **Mg2+ stabilizes the cell membrane** and shortens repolarization\n- Breaks the cycle of triggered activity driving the arrhythmia\n- 2g IV magnesium sulfate over 10-20 min\n\n### Complete Heart Block → Pacing\n- SA node signal can't reach ventricles\n- Ventricle relies on **escape rhythm** (20-40 bpm) — too slow\n- External pacemaker provides the electrical stimulus the conduction system can't deliver\n- **Transcutaneous pacing** as bridge to **transvenous pacing**",
       "linkedConditions": ["hyperkalemia", "cardiac-arrest", "dysrhythmias"],
       "linkedMeds": ["antiarrhythmics", "neuromuscular-blocking-agents", "local-anesthetics"]
+    },
+    {
+      "id": "hemodynamics",
+      "title": "Hemodynamics (Flow and Pressure)",
+      "theCore": "All of emergency medicine hemodynamics comes down to one equation: **BP = CO x SVR**.\n\n- **Blood Pressure** = the pressure perfusing your organs\n- **Cardiac Output** = how much blood the heart pumps per minute (CO = HR x SV)\n- **SVR** = how tight the blood vessels are\n\nEvery intervention in shock — fluids, vasopressors, inotropes, blood — is manipulating one of these variables.",
+      "howItWorks": "### Cardiac Output = HR x SV\n- **Heart Rate**: too slow = low CO (bradycardia), too fast = decreased filling time = low CO (tachycardia)\n- **Stroke Volume** determined by:\n  - **Preload**: how much blood fills the ventricle (stretch). Frank-Starling: more stretch = more force (up to a point)\n  - **Afterload**: resistance the heart pumps against (SVR for LV, PVR for RV)\n  - **Contractility**: intrinsic squeeze strength (inotropy)\n\n### MAP = DBP + 1/3(SBP - DBP)\n- Minimum MAP for organ perfusion: **~60-65 mmHg**\n- Below this: kidneys stop making urine, brain gets confused, gut becomes ischemic\n\n### Starling Forces (capillary level)\n- **Hydrostatic pressure** pushes fluid OUT of capillary\n- **Oncotic pressure** (albumin) pulls fluid IN\n- Imbalance = edema (HF, nephrotic syndrome, liver failure)",
+      "clinicalConnection": "### Shock = Inadequate Tissue Perfusion\n- **Hypovolemic**: low preload (bleeding, dehydration). Tx: volume\n- **Cardiogenic**: pump failure (MI, HF). Tx: inotropes, reduce afterload\n- **Distributive**: vasodilation (sepsis, anaphylaxis). Tx: vasopressors + volume\n- **Obstructive**: mechanical obstruction (PE, tamponade, tension PTX). Tx: fix the obstruction\n\nEvery vasopressor targets a specific receptor to manipulate these variables:\n- **Norepinephrine**: alpha-1 (vasoconstriction = increases SVR) + some beta-1 (increases CO). First-line for septic shock.\n- **Epinephrine**: beta-1 (CO) + beta-2 (bronchodilation) + alpha-1 (SVR). Anaphylaxis, cardiac arrest.\n- **Phenylephrine**: pure alpha-1 (SVR only). When you need vasoconstriction without cardiac stimulation.",
+      "atTheBedside": "### Reading the Numbers\n- **Low BP + high HR + low CVP** = hypovolemic shock. Give fluids.\n- **Low BP + high HR + high CVP + JVD** = cardiogenic or obstructive. Don't flood them with fluids — they need inotropes or the obstruction fixed.\n- **Low BP + high HR + warm extremities** = distributive (sepsis). Start vasopressors after initial fluid bolus.\n\n### Fluid Responsiveness\n- Not every hypotensive patient needs more fluid\n- **Passive leg raise** (45-degree elevation): if BP improves by >10%, they're fluid-responsive\n- After 30 mL/kg in sepsis, reassess before giving more — fluid overload kills too",
+      "linkedConditions": ["sepsis", "cardiogenic-shock", "hypovolemic-shock"],
+      "linkedMeds": ["vasopressors-and-inotropes", "diuretics"]
+    },
+    {
+      "id": "oxygen-delivery-and-consumption-do2vo2",
+      "title": "Oxygen Delivery and Consumption (DO2/VO2)",
+      "theCore": "The entire point of the cardiovascular and respiratory systems is to deliver oxygen to tissues. **DO2 = CO x CaO2**.\n\n- **DO2** = oxygen delivery (how much O2 reaches the tissues)\n- **CO** = cardiac output (the pump)\n- **CaO2** = arterial oxygen content = **(Hgb x SaO2 x 1.34) + (PaO2 x 0.003)**\n\nThe Hgb-bound portion dominates. This means: Hgb level, SaO2, and cardiac output are the three levers for oxygen delivery.",
+      "howItWorks": "### The DO2 Equation\n- **DO2 = CO x [(Hgb x SaO2 x 1.34) + (PaO2 x 0.003)]**\n- Normal DO2: ~1000 mL O2/min\n- Normal VO2 (consumption): ~250 mL O2/min\n- **O2 extraction ratio**: VO2/DO2 = normally ~25% (we have 4x reserve)\n\n### Three Levers to Fix DO2\n- **Increase CO**: fluids (preload), vasopressors, inotropes\n- **Increase Hgb**: transfuse PRBCs (each unit raises Hgb ~1 g/dL)\n- **Increase SaO2**: supplemental O2, fix the lung problem, intubate\n\n### Supply-Demand Mismatch = Shock\n- When DO2 drops below critical threshold, tissues switch to **anaerobic metabolism** = lactate production\n- Rising lactate = tissues aren't getting enough O2 = shock regardless of what the BP says",
+      "clinicalConnection": "### Why Lactate Matters\n- Lactate is a **DO2/VO2 mismatch marker** — it tells you tissues are starving for oxygen\n- Normal: <2 mmol/L\n- Trending lactate is more useful than a single value — falling = improving, rising = worsening\n\n### Applied to Common Scenarios\n- **Hemorrhagic shock**: Hgb drops = CaO2 drops = DO2 drops. Fix: transfuse + stop the bleeding\n- **Septic shock**: CO may be high but SVR is low + maldistribution. Fix: vasopressors + fluids + antibiotics\n- **Cardiogenic shock**: CO drops directly = DO2 drops. Fix: inotropes + reduce afterload\n- **Respiratory failure**: SaO2 drops = CaO2 drops. Fix: intubate + ventilate",
+      "atTheBedside": "### The Lactate Check\n- **Draw lactate on every sick patient** — it tells you about tissue perfusion when vitals can lie\n- A patient with a 'normal' BP of 110/70 but a lactate of 6 is in **compensated shock** — they're about to crash\n- Serial lactates guide resuscitation — if lactate isn't clearing, your interventions aren't working\n\n### Transfusion Threshold\n- Hgb 7 g/dL is the general transfusion trigger (TRICC trial)\n- But in **active hemorrhage or acute coronary syndrome**, transfuse earlier\n- Each unit of PRBCs increases Hgb ~1 g/dL and DO2 proportionally",
+      "linkedConditions": ["sepsis", "st-elevation-myocardial-infarction", "anaphylaxis"],
+      "linkedMeds": ["vasopressors-and-inotropes", "blood-products-and-transfusion"]
+    },
+    {
+      "id": "acid-base-balance",
+      "title": "Acid-Base Balance",
+      "theCore": "Blood pH is maintained in a narrow range: **7.35-7.45**. Outside this range, enzymes denature and cellular processes fail. The body has two compensatory systems:\n\n- **Lungs** (fast, minutes): blow off CO2 to fix acidosis, retain CO2 to fix alkalosis\n- **Kidneys** (slow, hours-days): retain or excrete HCO3- and H+\n\nThe ABG tells you what's broken and whether the body is keeping up.",
+      "howItWorks": "### The Henderson-Hasselbalch Relationship\n- pH is determined by the ratio of **HCO3-** (metabolic, kidneys) to **CO2** (respiratory, lungs)\n- **Acidosis** (pH <7.35): too much acid or too little base\n- **Alkalosis** (pH >7.45): too little acid or too much base\n\n### ABG Interpretation (5-Step Method)\n1. **pH**: acidosis or alkalosis?\n2. **PaCO2** (35-45): if matches pH direction = respiratory cause\n3. **HCO3** (22-26): if matches pH direction = metabolic cause\n4. **Compensation?** The other system trying to normalize pH\n5. **Anion gap** (if metabolic acidosis): Na - (Cl + HCO3). Normal 8-12. Elevated = MUDPILES\n\n### MUDPILES (Anion Gap Metabolic Acidosis)\n- **M**ethanol\n- **U**remia\n- **D**KA\n- **P**ropylene glycol\n- **I**soniazid / Iron\n- **L**actic acidosis\n- **E**thylene glycol\n- **S**alicylates",
+      "clinicalConnection": "### Why It Matters Clinically\n- **DKA**: anion gap metabolic acidosis (ketones). Kussmaul respirations = respiratory compensation (blowing off CO2)\n- **COPD exacerbation**: respiratory acidosis (retaining CO2). Chronic compensators have elevated bicarb at baseline\n- **Sepsis**: lactic acidosis (tissue hypoxia) = anion gap metabolic acidosis\n- **Vomiting**: metabolic alkalosis (losing H+ and Cl-). Contraction alkalosis.\n- **Aspirin overdose**: mixed respiratory alkalosis + anion gap metabolic acidosis (salicylates stimulate respiratory center AND are an acid)",
+      "atTheBedside": "### Quick ABG Reads\n- pH 7.28, CO2 55, HCO3 24 = **respiratory acidosis** (COPD flare, hypoventilation). Tx: ventilate\n- pH 7.22, CO2 20, HCO3 8 = **metabolic acidosis with compensation** (DKA, sepsis). Check anion gap. Tx: fix the cause\n- pH 7.52, CO2 30, HCO3 24 = **respiratory alkalosis** (anxiety, PE, pain). Tx: treat underlying cause\n\n### Kussmaul vs Hyperventilation\n- Both look like rapid deep breathing\n- Kussmaul = metabolic acidosis compensation (body desperately blowing off CO2). The patient is SICK.\n- Hyperventilation = anxiety/pain. The patient looks anxious, not sick. But ALWAYS rule out PE, sepsis, aspirin OD first.",
+      "linkedConditions": ["diabetic-ketoacidosis", "sepsis", "chronic-obstructive-pulmonary-disease-copd"],
+      "linkedMeds": ["insulin", "antibiotics-overview"]
+    },
+    {
+      "id": "homeostasis-and-feedback-loops",
+      "title": "Homeostasis and Feedback Loops",
+      "theCore": "The body constantly adjusts to stay in balance. Every vital sign, lab value, and hormone level is maintained by **feedback loops**.\n\n- **Negative feedback** (most common): deviation from setpoint triggers a response that brings it BACK. Thermostat model.\n- **Positive feedback** (rare, amplifying): deviation triggers MORE deviation. Oxytocin in labor, clotting cascade.\n\nWhen compensation fails, the patient **decompensates** — this is when they crash.",
+      "howItWorks": "### Negative Feedback Examples\n- **Blood pressure**: baroreceptors detect drop = sympathetic activation = HR up + vasoconstriction = BP restored\n- **Blood glucose**: glucose rises = pancreas releases insulin = glucose drops. Glucose falls = glucagon released = glucose rises\n- **Temperature**: hypothalamus detects fever = sweating, vasodilation. Detects cold = shivering, vasoconstriction\n- **RAAS**: low BP/low Na+ = renin release = angiotensin II = vasoconstriction + aldosterone = Na+/H2O retention = BP up\n\n### Compensation vs Decompensation\n- **Compensation**: body successfully maintains homeostasis (HR increases to maintain CO when SV drops)\n- **Decompensation**: compensatory mechanisms exhausted. HR can't go higher, vessels can't constrict more = BP crashes\n- The transition happens FAST — the patient who 'looks stable' with compensated shock can crash in minutes",
+      "clinicalConnection": "### Clinical Applications\n- **Shock**: every type of shock triggers compensatory tachycardia and vasoconstriction. When you see bradycardia or warm vasodilation in a sick patient, compensation has failed.\n- **Heart failure**: RAAS activation compensates initially (fluid retention) but eventually makes it worse (volume overload). ACE inhibitors break this maladaptive cycle.\n- **Cushing's triad** (hypertension + bradycardia + irregular respirations) = brain herniation. The brainstem is making a last-ditch effort to maintain CPP as ICP rises.\n- **Respiratory compensation**: Kussmaul breathing in DKA = lungs compensating for metabolic acidosis by blowing off CO2. If you intubate and ventilate at a normal rate, you remove their compensation and pH crashes.",
+      "atTheBedside": "### Don't Remove the Compensation\n- **DKA patient on BiPAP**: if they're Kussmaul breathing at RR 30 to compensate, don't set BiPAP to RR 12 — you'll remove respiratory compensation and pH will plummet\n- **Intubating a septic patient**: pre-intubation they're hyperventilating to compensate for metabolic acidosis. Post-intubation, match their minute ventilation or the pH will crash\n- **Tachycardia in shock**: the tachycardia is maintaining CO. Don't reflexively give a beta-blocker — treat the cause of shock\n\n### Recognizing Decompensation\n- HR that was 130 suddenly drops to 60 without treatment = not improvement, it's loss of compensation\n- The 'stable' trauma patient whose BP has been 90/60 for an hour = they're compensating with max vasoconstriction. When they decompensate, BP will drop precipitously",
+      "linkedConditions": ["sepsis", "diabetic-ketoacidosis", "anaphylaxis"],
+      "linkedMeds": ["vasopressors-and-inotropes", "ace-inhibitors"]
     }
   ],
 
