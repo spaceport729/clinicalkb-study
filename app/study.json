@@ -135,47 +135,55 @@
   "codes": [
     {
       "id": "cardiac-arrest-vfib-pvt",
-      "title": "Cardiac Arrest: VFib / Pulseless VT",
+      "title": "Cardiac Arrest: VFib / Pulseless VT (ACLS)",
       "scenario": "Adult found unresponsive on the floor. Coworker called for help. You arrive first.",
       "steps": [
         {
-          "prompt": "You find the patient unresponsive, not breathing normally. No pulse on carotid check (10 seconds). What's your immediate action?",
+          "prompt": "You find the patient unresponsive, not breathing normally. No pulse on carotid check (<10 seconds). What's your immediate action?",
           "options": [
-            { "text": "Start high-quality CPR — call for help and a defibrillator", "correct": true, "feedback": "Correct. CPR is THE priority. Push hard (at least 2 inches), push fast (100-120/min), allow full chest recoil, and minimize interruptions. Call a code and get a defibrillator coming while you compress. Every minute without CPR decreases survival by 7-10%." },
-            { "text": "Run to get the defibrillator", "correct": false, "feedback": "Don't leave the patient — start CPR and have someone ELSE get the defibrillator. If you're alone, call the code first (so help is coming), then start CPR. The exception: if an AED is within arm's reach, grab it." },
-            { "text": "Open the airway and give 2 rescue breaths", "correct": false, "feedback": "In witnessed adult cardiac arrest, compressions take priority over ventilations. Compression-only CPR is acceptable until advanced airway equipment arrives. The focus is on maintaining coronary and cerebral perfusion pressure." }
+            { "text": "Start high-quality CPR, activate code team, get defibrillator", "correct": true, "feedback": "Correct per ACLS. Begin CPR immediately: push hard (at least 2 inches), push fast (100-120/min), allow full chest recoil, minimize interruptions. Activate the emergency response system and get the defibrillator attached as quickly as possible while compressions continue." },
+            { "text": "Run to get the defibrillator first", "correct": false, "feedback": "Don't leave the patient — start CPR and send someone ELSE for the defibrillator. Compressions maintain coronary and cerebral perfusion. If alone, activate the code first (so help is coming), then start CPR." },
+            { "text": "Open the airway and give 2 rescue breaths first", "correct": false, "feedback": "Per ACLS, compressions come first (C-A-B sequence). Compression-only CPR is acceptable until advanced airway equipment arrives. The priority is maintaining perfusion pressure." }
           ]
         },
         {
-          "prompt": "The crash cart arrives. The defibrillator pads are on. The monitor shows VFib (chaotic, irregular waveform, no organized QRS). What's next?",
+          "prompt": "CPR is in progress. Defibrillator pads are on. The monitor shows VFib. What's the next step per ACLS?",
           "options": [
-            { "text": "Defibrillate — biphasic 200J, then immediately resume CPR", "correct": true, "feedback": "Correct. VFib is a SHOCKABLE rhythm. Charge while CPR continues, clear the patient, shock, then IMMEDIATELY resume CPR for 2 minutes before the next rhythm check. Don't stop to check for a pulse after the shock — get right back on the chest." },
-            { "text": "Give epinephrine 1mg IV push first, then shock", "correct": false, "feedback": "In VFib/pVT, the first shock comes BEFORE epinephrine. Epi is given after the 2nd shock (first dose), then every 3-5 minutes. Defibrillation is the definitive treatment for VFib — don't delay it." },
-            { "text": "Give amiodarone 300mg IV push first", "correct": false, "feedback": "Amiodarone doesn't come until after the 3rd shock in refractory VFib/pVT. The sequence is: shock → CPR → shock → CPR + epi → shock → CPR + amiodarone. Shock first." }
+            { "text": "Shock (biphasic 120-200J per manufacturer), then immediately resume CPR for 2 minutes", "correct": true, "feedback": "Correct. VFib is a shockable rhythm. Charge while CPR continues, clear, shock, then IMMEDIATELY resume CPR for 2 minutes. Do NOT stop to check rhythm or pulse after the shock — get right back on the chest. The 2-minute cycle of CPR is critical." },
+            { "text": "Give epinephrine 1mg IV first, then shock", "correct": false, "feedback": "Per ACLS, the first shock comes BEFORE any medications. Epinephrine is not given until after the 2nd shock. Early defibrillation is the highest-priority intervention for VFib/pVT." },
+            { "text": "Shock, then immediately check for a pulse", "correct": false, "feedback": "Never stop to check pulse immediately after a shock. Per ACLS, you immediately resume CPR for 2 minutes after every shock. Rhythm checks happen only at the end of each 2-minute cycle." }
           ]
         },
         {
-          "prompt": "After 2 minutes of CPR, rhythm check still shows VFib. You defibrillate again (2nd shock). What medications are indicated NOW?",
+          "prompt": "You've completed 2 minutes of CPR after the 1st shock. You pause briefly (<10 sec) for a rhythm check. Still VFib. You shock again (2nd shock) and immediately resume CPR. What medication is indicated during this cycle?",
           "options": [
-            { "text": "Epinephrine 1mg IV push — repeat every 3-5 minutes", "correct": true, "feedback": "Correct. After the 2nd shock, give epinephrine 1mg IV/IO push. Epi's alpha-1 effect causes peripheral vasoconstriction, which increases coronary and cerebral perfusion pressure during CPR. Repeat every 3-5 minutes (every other cycle). Follow with a 20mL flush and elevate the arm." },
-            { "text": "Amiodarone 300mg IV push", "correct": false, "feedback": "Amiodarone comes after the 3RD shock if VFib/pVT persists. Right now you should be giving epinephrine after this 2nd shock." },
-            { "text": "Atropine 1mg IV push", "correct": false, "feedback": "Atropine is NOT used in cardiac arrest (removed from ACLS algorithm in 2010). It was previously used for asystole/PEA but showed no benefit. Think epi and amiodarone for arrest." }
+            { "text": "Epinephrine 1mg IV/IO push, flush with 20mL NS", "correct": true, "feedback": "Correct per ACLS. Epinephrine 1mg IV/IO is given during CPR after the 2nd shock. Follow with a 20mL NS flush and elevate the extremity. Epi's alpha-1 vasoconstriction increases coronary and cerebral perfusion pressure during compressions. Repeat every 3-5 minutes (every other cycle)." },
+            { "text": "Amiodarone 300mg IV/IO push", "correct": false, "feedback": "Amiodarone comes after the 3rd shock per ACLS, not the 2nd. The sequence is: Shock #1 → Shock #2 + epi → Shock #3 + amiodarone." },
+            { "text": "No medications yet — just continue CPR", "correct": false, "feedback": "Per ACLS, epinephrine is indicated after the 2nd shock. Vasopressor therapy should be initiated as soon as IV/IO access is available after the second shock." }
           ]
         },
         {
-          "prompt": "Two more minutes of CPR. Rhythm check: still VFib. You defibrillate a 3rd time. VFib persists. What now?",
+          "prompt": "Another 2 minutes of CPR. Rhythm check: still VFib. You shock a 3rd time and immediately resume CPR. What do you give during this cycle?",
           "options": [
-            { "text": "Amiodarone 300mg IV push + continue epi every 3-5 min", "correct": true, "feedback": "Correct. After the 3rd shock with refractory VFib, give amiodarone 300mg IV/IO push. A second dose of 150mg can be given if VFib continues. Amiodarone blocks K+ channels (prolongs repolarization) and has Na+ and Ca2+ channel blocking properties — it stabilizes the chaotic electrical activity. Continue epi every 3-5 minutes." },
-            { "text": "Lidocaine 1-1.5mg/kg IV push", "correct": false, "feedback": "Lidocaine is an alternative if amiodarone is unavailable, but amiodarone is preferred (ALPS trial showed comparable outcomes, but amiodarone is the standard). The dose would be 1-1.5 mg/kg IV, with repeat doses of 0.5-0.75 mg/kg." },
-            { "text": "Increase defibrillation energy to maximum", "correct": false, "feedback": "Most biphasic defibrillators already start at or near maximum effective energy (200J). Escalating energy is reasonable if the manufacturer recommends it, but the bigger issue is adding antiarrhythmics to break the refractory VFib. Give amiodarone." }
+            { "text": "Amiodarone 300mg IV/IO push + continue epi every 3-5 min", "correct": true, "feedback": "Correct per ACLS. Amiodarone 300mg IV/IO push is given after the 3rd shock for refractory VFib/pVT. A second dose of 150mg can be given if VFib persists after subsequent shocks. Continue epinephrine every 3-5 minutes." },
+            { "text": "Epinephrine 1mg only — it's not time for amiodarone yet", "correct": false, "feedback": "Per ACLS, amiodarone is indicated after the 3rd shock. If VFib persists through 3 shocks, adding an antiarrhythmic is the next step. Continue epi as well if due (every 3-5 min)." },
+            { "text": "Lidocaine 1-1.5mg/kg IV push instead of amiodarone", "correct": false, "feedback": "Lidocaine is an acceptable alternative per ACLS if amiodarone is unavailable, but amiodarone is the first-line antiarrhythmic for refractory VFib/pVT." }
           ]
         },
         {
-          "prompt": "After the next shock, the rhythm check shows organized QRS complexes on the monitor. What do you do?",
+          "prompt": "After 2 more minutes of CPR, you pause for a rhythm check (<10 seconds). The monitor shows an organized rhythm with narrow QRS complexes. Per ACLS, what do you do?",
           "options": [
-            { "text": "Check for a pulse — if present, begin post-arrest care", "correct": true, "feedback": "Correct! Organized rhythm on the monitor could be ROSC (return of spontaneous circulation) or PEA. Check for a pulse. If present: obtain 12-lead ECG (looking for STEMI as cause), start targeted temperature management (TTM), optimize ventilation (target SpO2 94-99%, ETCO2 35-45), vasopressor drip for MAP >65, and treat the underlying cause. If no pulse → it's PEA, and you resume CPR." },
-            { "text": "Immediately resume CPR for another 2 minutes", "correct": false, "feedback": "When you see an organized rhythm, PAUSE to check for a pulse. If the rhythm had still been VFib or asystole, you'd resume CPR immediately. But an organized rhythm might mean ROSC — you need to check." },
-            { "text": "Give another round of epinephrine", "correct": false, "feedback": "Don't give more epi before checking if you have ROSC. If the patient has a pulse, additional vasopressors should be given as a drip (not push-dose epi) titrated to MAP >65." }
+            { "text": "Check for a pulse — if present, begin post-cardiac arrest care", "correct": true, "feedback": "Correct per ACLS. When a rhythm check shows organized electrical activity, check for a pulse. If pulse is present = ROSC. Begin post-cardiac arrest care: 12-lead ECG, targeted temperature management, optimize ventilation (SpO2 94-99%, ETCO2 35-45), vasopressor drip for MAP >65, and identify/treat the underlying cause (Hs and Ts)." },
+            { "text": "Shock again — any rhythm in cardiac arrest gets shocked", "correct": false, "feedback": "Only VFib and pulseless VT are shockable rhythms. An organized rhythm is NOT shockable. You must determine if this is ROSC (has a pulse) or PEA (no pulse) — these require completely different management." },
+            { "text": "Give another dose of epinephrine before checking pulse", "correct": false, "feedback": "Per ACLS, when you see organized electrical activity at a rhythm check, check for a pulse first. If the patient has ROSC, giving push-dose epi could be harmful. Determine ROSC vs PEA before giving any further medications." }
+          ]
+        },
+        {
+          "prompt": "You check for a pulse and there is none. The monitor still shows an organized rhythm. This is PEA. Per ACLS, what do you do?",
+          "options": [
+            { "text": "Resume CPR immediately for 2 minutes, give epi if due, and search for reversible causes (Hs and Ts)", "correct": true, "feedback": "Correct per ACLS. PEA is a non-shockable rhythm — you do NOT shock. Resume high-quality CPR, give epinephrine every 3-5 min, and aggressively search for reversible causes. Hs: Hypovolemia, Hypoxia, Hydrogen ion (acidosis), Hypo/Hyperkalemia, Hypothermia. Ts: Tension pneumothorax, Tamponade, Toxins, Thrombosis (PE or MI)." },
+            { "text": "Defibrillate — any pulseless rhythm should be shocked", "correct": false, "feedback": "PEA is NOT a shockable rhythm. Only VFib and pulseless VT are shockable. Shocking PEA or asystole provides no benefit and interrupts CPR. The management of PEA is CPR + epi + finding and treating the cause." },
+            { "text": "Amiodarone 150mg IV push for the organized rhythm", "correct": false, "feedback": "Amiodarone is for refractory VFib/pVT only. PEA has organized electrical activity — the problem isn't the rhythm, it's that the heart has no mechanical output. Focus on CPR and reversible causes." }
           ]
         }
       ]
