@@ -12,7 +12,7 @@ from pathlib import Path
 
 VAULT_PATH = Path(r"C:\Users\stace\spaceport\ClinicalKB")
 OUTPUT_PATH = Path(r"C:\Users\stace\spaceport\ClinicalKB-Study\app\data.json")
-CATEGORIES = ["Systems", "Concepts", "Pharmacology", "Conditions", "Procedures"]
+CATEGORIES = ["Systems", "Concepts", "Pharmacology", "Conditions", "Procedures", "Diagnostics", "Chief Complaints"]
 
 
 def slugify(name):
