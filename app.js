@@ -345,7 +345,6 @@
       html += '</div></div>';
     });
 
-    html += renderModeRating('presentation', todaySelections.presentationId);
     html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
 
     document.getElementById('presentation-content').innerHTML = html;
