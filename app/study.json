@@ -5475,6 +5475,271 @@
           ]
         }
       ]
+    },
+    {
+      "id": "acls-stable-svt",
+      "title": "Stable SVT (ACLS Tachycardia)",
+      "scenario": "32-year-old female, palpitations x 20 min, HR 188, BP 118/72, alert, no chest pain. Monitor shows regular narrow-complex tachycardia, no P waves visible.",
+      "steps": [
+        {
+          "prompt": "Regular narrow-complex tachycardia at 188 bpm. BP is stable, patient is alert and talking. Per ACLS, is this stable or unstable tachycardia?",
+          "options": [
+            { "text": "Stable — alert, normal BP, no signs of hemodynamic compromise", "correct": true, "feedback": "Correct per ACLS. Stable tachycardia = no serious signs/symptoms caused by the tachycardia (no hypotension, no AMS, no ischemic chest pain, no acute HF). This patient can tolerate a trial of medication before cardioversion." },
+            { "text": "Unstable — any HR over 150 is unstable", "correct": false, "feedback": "Heart rate alone does not define instability. A young healthy patient with SVT at 188 can be completely stable hemodynamically. Instability is defined by symptoms: hypotension, AMS, ischemic chest pain, signs of shock." },
+            { "text": "Unstable — immediate synchronized cardioversion", "correct": false, "feedback": "This patient is stable. Cardioversion is for UNSTABLE tachycardia. With stable SVT, try vagal maneuvers and adenosine first." }
+          ]
+        },
+        {
+          "prompt": "This is stable, regular, narrow-complex tachycardia (likely SVT). Per ACLS, what is the first intervention?",
+          "options": [
+            { "text": "Vagal maneuvers (modified Valsalva, carotid massage, ice to face)", "correct": true, "feedback": "Correct per ACLS. Vagal maneuvers are first-line for stable SVT. Modified Valsalva: have patient blow hard against a closed glottis for 15 seconds, then lay flat and passively raise legs 45 degrees. Stimulates vagus nerve → slows AV conduction → can break the re-entrant circuit. Works ~25% of the time." },
+            { "text": "Adenosine 6mg rapid IV push", "correct": false, "feedback": "Adenosine is second-line after vagal maneuvers fail. Try vagal maneuvers first — they're non-invasive and work ~25% of the time." },
+            { "text": "Diltiazem 0.25 mg/kg IV", "correct": false, "feedback": "Diltiazem is for rate control (afib, aflutter), not first-line for SVT. Per ACLS, try vagal maneuvers first, then adenosine." }
+          ]
+        },
+        {
+          "prompt": "Vagal maneuvers failed. Per ACLS, what's next?",
+          "options": [
+            { "text": "Adenosine 6mg rapid IV push, followed by immediate 20mL NS flush", "correct": true, "feedback": "Correct per ACLS. Adenosine 6mg rapid IV push into a proximal (antecubital or above) IV, immediately followed by 20mL NS rapid flush. Half-life is <10 seconds — it MUST be given fast. Warn the patient: they will feel chest tightness, flushing, and a sense of impending doom for a few seconds. This is normal and transient." },
+            { "text": "Adenosine 12mg slow IV push over 1-2 minutes", "correct": false, "feedback": "Adenosine must be given RAPID IV push, not slowly. It has a half-life of <10 seconds — if you push it slowly, it's metabolized before reaching the heart. Push fast into a proximal IV with immediate flush." },
+            { "text": "Amiodarone 150mg IV over 10 minutes", "correct": false, "feedback": "Amiodarone is for stable wide-complex tachycardia (suspected VT with pulse), not narrow-complex SVT. Per ACLS, adenosine is the drug for regular narrow-complex tachycardia." }
+          ]
+        },
+        {
+          "prompt": "Adenosine 6mg was given. The rhythm briefly paused (asystole for 3 seconds) then returned to the same tachycardia. Per ACLS, what now?",
+          "options": [
+            { "text": "Adenosine 12mg rapid IV push (repeat dose is doubled)", "correct": true, "feedback": "Correct per ACLS. If 6mg fails, give adenosine 12mg rapid IV push with flush. May repeat the 12mg dose once more if needed. Each dose should be given as fast as possible with immediate flush. The brief asystole is expected and shows the drug reached the AV node." },
+            { "text": "Adenosine 6mg again — same dose", "correct": false, "feedback": "Per ACLS, the second dose of adenosine is 12mg, not a repeat of 6mg. The dose is doubled because the first dose was insufficient to break the circuit." },
+            { "text": "Synchronized cardioversion — adenosine failed", "correct": false, "feedback": "One failed dose of adenosine doesn't mean cardioversion. Per ACLS, try the 12mg dose (up to 2 more times) before escalating. Cardioversion is reserved for unstable patients or truly refractory cases." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acls-stable-wide-complex",
+      "title": "Stable Wide-Complex Tachycardia (ACLS)",
+      "scenario": "58-year-old male with history of MI, palpitations, HR 162, BP 104/68, alert. Monitor shows regular wide-complex tachycardia (QRS >120ms).",
+      "steps": [
+        {
+          "prompt": "Regular wide-complex tachycardia at 162 bpm. Patient is hemodynamically stable. Per ACLS, what is the critical assumption about wide-complex tachycardia?",
+          "options": [
+            { "text": "Assume it's VT until proven otherwise — especially with cardiac history", "correct": true, "feedback": "Correct per ACLS. Wide-complex tachycardia should be treated as VT until proven otherwise. With a history of MI, VT is the most likely diagnosis. SVT with aberrant conduction is possible but less common and less dangerous to misdiagnose. Treating VT as SVT can be fatal; treating SVT as VT is safe." },
+            { "text": "It's probably SVT with aberrancy since the patient is stable", "correct": false, "feedback": "Stability does not help distinguish VT from SVT with aberrancy. Patients with VT can be hemodynamically stable. Per ACLS, assume VT — treating SVT as VT is safe, but treating VT as SVT (e.g., giving diltiazem) can cause cardiovascular collapse." },
+            { "text": "Need a 12-lead ECG to determine the diagnosis before treating", "correct": false, "feedback": "A 12-lead ECG is helpful but should not delay treatment. Per ACLS, if the rhythm is regular and wide-complex, treat as VT. Obtain the 12-lead, but start the algorithm." }
+          ]
+        },
+        {
+          "prompt": "The patient is stable with presumed VT. Per ACLS, what is the recommended treatment?",
+          "options": [
+            { "text": "Amiodarone 150mg IV over 10 minutes", "correct": true, "feedback": "Correct per ACLS. For stable monomorphic VT, amiodarone 150mg IV over 10 minutes is first-line. May repeat and follow with a maintenance infusion (1 mg/min x 6 hours, then 0.5 mg/min x 18 hours). Procainamide and sotalol are alternatives. Prepare for cardioversion if the patient becomes unstable." },
+            { "text": "Adenosine 6mg rapid IV push", "correct": false, "feedback": "Adenosine can be used diagnostically for regular wide-complex tachycardia if SVT with aberrancy is strongly suspected, but it is NOT the treatment for VT. Per ACLS, treat presumed VT with amiodarone." },
+            { "text": "Diltiazem 0.25 mg/kg IV", "correct": false, "feedback": "NEVER give calcium channel blockers (diltiazem, verapamil) for wide-complex tachycardia. If this is VT, CCBs can cause cardiovascular collapse. This is a critical ACLS teaching point." }
+          ]
+        },
+        {
+          "prompt": "During the amiodarone infusion, the patient becomes diaphoretic, BP drops to 72/40, and becomes confused. Per ACLS, what do you do?",
+          "options": [
+            { "text": "Immediate synchronized cardioversion", "correct": true, "feedback": "Correct per ACLS. The patient has converted from stable to UNSTABLE tachycardia (hypotension, AMS). When a tachycardia patient becomes unstable, the treatment is immediate synchronized cardioversion regardless of the rhythm type. For wide-complex (VT with pulse): start at 100J synchronized." },
+            { "text": "Increase amiodarone infusion rate", "correct": false, "feedback": "The patient is now hemodynamically unstable. Medications are too slow — you need immediate synchronized cardioversion. Every minute of hemodynamic instability worsens outcomes." },
+            { "text": "Give a fluid bolus and continue the amiodarone", "correct": false, "feedback": "The hypotension is caused by the tachycardia, not hypovolemia. Fluids won't fix the rate. Synchronized cardioversion will — convert the rhythm and the hemodynamics will improve." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acls-post-rosc",
+      "title": "Post-Cardiac Arrest Care (ACLS)",
+      "scenario": "After 15 minutes of resuscitation for VFib arrest, the patient has ROSC. HR 102, BP 88/54 on epi drip. Intubated. GCS 3T (not following commands).",
+      "steps": [
+        {
+          "prompt": "You have ROSC. Per ACLS, what are the immediate priorities in post-cardiac arrest care?",
+          "options": [
+            { "text": "12-lead ECG, optimize ventilation, hemodynamic support, targeted temperature management", "correct": true, "feedback": "Correct per ACLS. Post-ROSC priorities: (1) 12-lead ECG — look for STEMI as the cause, emergent cath if found. (2) Optimize oxygenation/ventilation — target SpO2 94-99%, ETCO2 35-45, avoid hyperoxia and hyperventilation. (3) Hemodynamic support — MAP >65 with vasopressors/fluids. (4) Targeted temperature management (TTM). (5) Identify and treat the cause." },
+            { "text": "CT head to rule out stroke", "correct": false, "feedback": "CT head is not the immediate priority after cardiac arrest. The 12-lead ECG is — STEMI is a common cause of VFib arrest and the patient may need emergent PCI. CT head may be done later if no cardiac cause is found." },
+            { "text": "Extubate the patient now that they have ROSC", "correct": false, "feedback": "Do NOT extubate. The patient has GCS 3T (not following commands). They need continued mechanical ventilation and will likely undergo TTM, which requires sedation and intubation." }
+          ]
+        },
+        {
+          "prompt": "The 12-lead ECG shows ST elevation in V1-V4. Per ACLS, what should happen?",
+          "options": [
+            { "text": "Emergent cardiac catheterization regardless of neurological status", "correct": true, "feedback": "Correct per ACLS/AHA. STEMI post-cardiac arrest is an indication for emergent PCI regardless of the patient's neurological status (even if comatose). The MI likely caused the arrest — reperfusion may improve both cardiac and neurological outcomes. Do not delay cath for neurologic prognostication." },
+            { "text": "Wait to see if the patient wakes up before deciding on cath", "correct": false, "feedback": "Per ACLS, do NOT delay cardiac catheterization based on neurological status. Comatose post-arrest patients with STEMI should go to the cath lab. Early reperfusion improves survival." },
+            { "text": "Give tPA since the patient can't go to the cath lab during active resuscitation", "correct": false, "feedback": "The patient has ROSC — active resuscitation is over. Emergent PCI is preferred over thrombolytics for STEMI. The cath lab should be activated immediately." }
+          ]
+        },
+        {
+          "prompt": "Per ACLS, what are the ventilation targets for post-cardiac arrest care?",
+          "options": [
+            { "text": "SpO2 94-99%, ETCO2 35-45 mmHg, avoid hyperoxia and hyperventilation", "correct": true, "feedback": "Correct per ACLS. Hyperoxia (100% FiO2 when not needed) causes oxidative injury to the recovering brain. Hyperventilation (low ETCO2) causes cerebral vasoconstriction, worsening brain ischemia. Titrate FiO2 to SpO2 94-99%. Target ETCO2 35-45 (normal). Avoid both extremes." },
+            { "text": "100% FiO2 and hyperventilate to reduce ICP", "correct": false, "feedback": "Both are harmful post-arrest. Hyperoxia causes free radical damage to ischemic-reperfusion brain tissue. Hyperventilation causes cerebral vasoconstriction — the brain needs MORE blood flow post-arrest, not less. Target SpO2 94-99% and normal ETCO2." },
+            { "text": "Keep SpO2 above 88% and any ETCO2 is acceptable", "correct": false, "feedback": "SpO2 88% is too low for post-arrest care (that's the COPD target). Per ACLS, target 94-99%. ETCO2 should be 35-45 — both hypo- and hyperventilation worsen neurological outcomes." }
+          ]
+        },
+        {
+          "prompt": "The patient remains comatose (not following commands). Per ACLS, what is targeted temperature management (TTM)?",
+          "options": [
+            { "text": "Cool to 32-36°C for at least 24 hours in comatose post-arrest patients", "correct": true, "feedback": "Correct per ACLS. TTM is recommended for comatose adult patients with ROSC after cardiac arrest. Target temperature 32-36°C (per TTM2 trial, 36°C is noninferior to 33°C — local protocol determines exact target). Maintain for at least 24 hours. Methods: cooling blankets, cold IV fluids, intravascular cooling devices. Prevent fever aggressively for at least 72 hours." },
+            { "text": "Only cool if the initial rhythm was VFib", "correct": false, "feedback": "Per current ACLS guidelines, TTM is recommended for all comatose post-arrest patients regardless of initial rhythm (shockable or non-shockable). Previous guidelines were more restrictive; current evidence supports TTM for all cardiac arrest survivors who remain comatose." },
+            { "text": "TTM is no longer recommended based on recent evidence", "correct": false, "feedback": "TTM is still recommended per ACLS guidelines. The TTM2 trial (2021) showed that hypothermia at 33°C did not improve outcomes over normothermia at 37.5°C, BUT actively preventing fever is critical. Current guidelines recommend targeting 32-36°C and preventing hyperthermia." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pals-cardiac-arrest",
+      "title": "Pediatric Cardiac Arrest (PALS)",
+      "scenario": "5-year-old found unresponsive in the pool. Pulled out by parent. Not breathing, no pulse.",
+      "steps": [
+        {
+          "prompt": "Unresponsive child, not breathing, no pulse. Per PALS, what are the key differences from adult cardiac arrest?",
+          "options": [
+            { "text": "Most pediatric arrests are respiratory in origin — ventilation is critical from the start (C-A-B but ventilation matters more)", "correct": true, "feedback": "Correct per PALS. Unlike adults (primarily cardiac etiology → VFib), pediatric arrests are usually caused by respiratory failure or shock progressing to arrest. The rhythm is usually asystole or PEA (non-shockable). This means high-quality CPR WITH effective ventilation is essential from the start. Sequence is still C-A-B but don't delay ventilations." },
+            { "text": "No differences — follow the same adult ACLS algorithm", "correct": false, "feedback": "PALS differs from ACLS in important ways: compression depth (1/3 AP diameter, about 2 inches in children, 1.5 inches in infants), rate (same 100-120), ratio (15:2 with 2 rescuers vs 30:2), drug dosing (weight-based), defibrillation energy (2 J/kg first shock), and emphasis on ventilation due to respiratory etiology." },
+            { "text": "Compressions aren't as important — focus on ventilation only", "correct": false, "feedback": "Compressions are still critical in pediatric arrest. The sequence is C-A-B. But unlike adults where compression-only CPR is acceptable, pediatric arrests need early effective ventilation because the cause is usually respiratory. Both are essential." }
+          ]
+        },
+        {
+          "prompt": "CPR is in progress. What are the correct compression parameters per PALS for a child (age 1-puberty)?",
+          "options": [
+            { "text": "Rate 100-120/min, depth at least 1/3 AP diameter (~2 inches), 15:2 ratio with 2 rescuers", "correct": true, "feedback": "Correct per PALS. Child compressions: rate 100-120/min, depth at least 1/3 AP diameter (approximately 2 inches for children), full recoil. Ratio: 15:2 with 2 healthcare providers, 30:2 with a single rescuer. Use one or two hands depending on child's size." },
+            { "text": "Rate 100-120/min, depth at least 2.4 inches, 30:2 ratio always", "correct": false, "feedback": "2.4 inches is the adult max depth. For children, target at least 1/3 AP diameter (~2 inches). Also, with 2 healthcare providers, the ratio is 15:2 (not 30:2). 30:2 is only for a single rescuer." },
+            { "text": "Rate 80-100/min, depth 1 inch, 15:2 ratio", "correct": false, "feedback": "Too slow and too shallow. Rate is 100-120/min (same as adults). Depth is at least 1/3 AP diameter (~2 inches in children). 1 inch would be appropriate for infants, not children." }
+          ]
+        },
+        {
+          "prompt": "The monitor shows asystole. Per PALS, what is the management?",
+          "options": [
+            { "text": "High-quality CPR + epinephrine 0.01 mg/kg (0.1 mL/kg of 1:10,000) IV/IO every 3-5 min + search for reversible causes", "correct": true, "feedback": "Correct per PALS. Asystole is non-shockable. Management: continuous high-quality CPR with effective ventilation, epinephrine 0.01 mg/kg IV/IO (0.1 mL/kg of 1:10,000 concentration) every 3-5 minutes, and search for reversible causes. In drowning: hypoxia is the cause — prioritize oxygenation and ventilation." },
+            { "text": "Defibrillate at 2 J/kg", "correct": false, "feedback": "Asystole is NOT shockable — same as in ACLS. Only VFib and pulseless VT are shockable. Defibrillating asystole provides no benefit." },
+            { "text": "Epinephrine 1mg IV push (adult dose)", "correct": false, "feedback": "NEVER give adult doses to children. Epinephrine in PALS is weight-based: 0.01 mg/kg IV/IO. For a 20 kg child, that's 0.2 mg — a fraction of the adult 1mg dose. Overdosing epinephrine in children can cause severe hypertension and intracranial hemorrhage." }
+          ]
+        },
+        {
+          "prompt": "After CPR and epinephrine, the rhythm changes to VFib. Per PALS, what energy do you use for pediatric defibrillation?",
+          "options": [
+            { "text": "First shock: 2 J/kg. Second shock: 4 J/kg. Subsequent: 4-10 J/kg (max 10 J/kg or adult dose)", "correct": true, "feedback": "Correct per PALS. Pediatric defibrillation energy: 2 J/kg for the first shock, 4 J/kg for the second, and 4-10 J/kg for subsequent shocks (not to exceed 10 J/kg or the adult maximum dose). Resume CPR immediately after each shock for 2 minutes before rechecking. Epinephrine after 2nd shock, amiodarone 5 mg/kg after 3rd shock." },
+            { "text": "Same as adult — 200J biphasic", "correct": false, "feedback": "200J would be massive for a child. Pediatric defibrillation is weight-based: start at 2 J/kg. For a 20 kg child, that's 40J — not 200J. Always use pediatric energy dosing." },
+            { "text": "1 J/kg for all shocks", "correct": false, "feedback": "1 J/kg is too low. Per PALS, first shock is 2 J/kg, escalating to 4 J/kg then 4-10 J/kg. Underdosing defibrillation reduces the chance of successful conversion." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pals-bradycardia",
+      "title": "Pediatric Bradycardia (PALS)",
+      "scenario": "3-year-old brought in by EMS, found lethargic with labored breathing. HR 48, RR 8, SpO2 78%. Mottled, poor perfusion.",
+      "steps": [
+        {
+          "prompt": "A 3-year-old with HR 48, poor perfusion, and respiratory failure. Per PALS, what is the MOST common cause of bradycardia in children?",
+          "options": [
+            { "text": "Hypoxia — bradycardia in children is almost always a sign of respiratory failure", "correct": true, "feedback": "Correct per PALS. In children, bradycardia is typically caused by HYPOXIA, not a primary cardiac problem. A child's heart rate drops when oxygen delivery fails — this is a pre-arrest rhythm. The priority is to oxygenate and ventilate. If the bradycardia is causing poor perfusion (HR <60 with signs of shock despite oxygenation), start CPR." },
+            { "text": "Heart block — same as in adults", "correct": false, "feedback": "Heart block is rare in children (unless post-cardiac surgery or congenital). The overwhelmingly most common cause of pediatric bradycardia is HYPOXIA from respiratory failure. Always fix breathing first." },
+            { "text": "Medication toxicity", "correct": false, "feedback": "While possible, medication toxicity is far less common than hypoxia as a cause of pediatric bradycardia. The first step is always to support airway and breathing." }
+          ]
+        },
+        {
+          "prompt": "Per PALS, what is the FIRST intervention for this bradycardic child?",
+          "options": [
+            { "text": "Open airway + bag-valve-mask ventilation with 100% O2", "correct": true, "feedback": "Correct per PALS. Airway and breathing first — the bradycardia is caused by hypoxia. Open the airway (head-tilt chin-lift or jaw thrust), provide BVM ventilation with 100% O2. If the bradycardia is purely from hypoxia, the heart rate will improve with effective ventilation. Watch for improvement in HR and perfusion." },
+            { "text": "Atropine 0.02 mg/kg IV", "correct": false, "feedback": "Atropine comes AFTER oxygenation and ventilation. Per PALS, fix the breathing first. If bradycardia persists despite adequate oxygenation and ventilation with HR <60 and poor perfusion → start CPR → then consider epinephrine and atropine." },
+            { "text": "Transcutaneous pacing", "correct": false, "feedback": "Pacing is a late intervention in pediatric bradycardia. Per PALS: (1) oxygenate/ventilate, (2) if HR <60 with poor perfusion despite ventilation → CPR, (3) epinephrine, (4) atropine, (5) consider pacing if unresponsive to medications." }
+          ]
+        },
+        {
+          "prompt": "You're ventilating with BVM. HR remains 42, patient is limp with poor perfusion. Per PALS, at what heart rate do you start CPR in a child?",
+          "options": [
+            { "text": "HR <60 with signs of poor perfusion despite adequate oxygenation and ventilation", "correct": true, "feedback": "Correct per PALS. Start CPR in a child when HR <60 AND there are signs of poor perfusion (mottling, weak pulses, AMS, delayed cap refill) DESPITE adequate oxygenation and ventilation. This is different from adults — in adults, CPR is for pulselessness. In children, profound bradycardia with shock = start compressions." },
+            { "text": "Only when there's no pulse at all", "correct": false, "feedback": "In PALS, you don't wait for pulselessness. If a child has HR <60 with poor perfusion despite adequate ventilation, START CPR. Waiting for complete pulselessness means waiting too long — the child is already in a pre-arrest state." },
+            { "text": "HR <100 in a child this age", "correct": false, "feedback": "While HR <100 may be abnormal for a 3-year-old (normal resting HR is roughly 80-130), the threshold for starting CPR per PALS is HR <60 with poor perfusion despite ventilation, not simply any HR below normal." }
+          ]
+        },
+        {
+          "prompt": "CPR is in progress, ventilating effectively. Per PALS, what medication do you give for symptomatic bradycardia?",
+          "options": [
+            { "text": "Epinephrine 0.01 mg/kg IV/IO — first-line for bradycardia with poor perfusion", "correct": true, "feedback": "Correct per PALS. Epinephrine 0.01 mg/kg (0.1 mL/kg of 1:10,000) IV/IO every 3-5 minutes is first-line for bradycardia unresponsive to ventilation and oxygenation. Atropine 0.02 mg/kg (min dose 0.1 mg) may be considered if increased vagal tone or primary AV block is suspected." },
+            { "text": "Atropine first, then epinephrine if needed", "correct": false, "feedback": "Per PALS, epinephrine is first-line for bradycardia with poor perfusion. Atropine may be considered but is not the primary drug. Atropine is more appropriate when the cause is suspected to be vagal (e.g., during intubation or suctioning)." },
+            { "text": "Epinephrine 0.1 mg/kg (high-dose)", "correct": false, "feedback": "High-dose epinephrine (0.1 mg/kg) is NOT recommended per PALS. The standard dose is 0.01 mg/kg. High-dose epi showed no benefit and potential harm in studies. Always use 0.01 mg/kg (1:10,000 concentration)." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nrp-newborn",
+      "title": "Neonatal Resuscitation (NRP)",
+      "scenario": "Term newborn delivered, not crying, limp, poor tone. Brought to radiant warmer.",
+      "steps": [
+        {
+          "prompt": "A newborn is delivered and is not vigorous (not crying, limp, poor tone). Per NRP, what are the initial steps?",
+          "options": [
+            { "text": "Warm, dry, stimulate, position airway, suction if needed — all within 30 seconds", "correct": true, "feedback": "Correct per NRP. Initial steps (within 30 seconds): (1) Warm — radiant warmer, dry with warm towels, remove wet linens. (2) Position — slight neck extension (sniffing position). (3) Clear airway — suction mouth then nose if needed (only if obstructed; routine suctioning no longer recommended). (4) Stimulate — rub the back, flick the soles. Then ASSESS: breathing and heart rate." },
+            { "text": "Immediately intubate and begin positive pressure ventilation", "correct": false, "feedback": "Intubation is NOT the first step. Most newborns respond to initial steps (warm, dry, stimulate, position). Per NRP, assess after initial steps — if not breathing or HR <100 after stimulation, THEN begin PPV (with mask first, not intubation)." },
+            { "text": "Clamp and cut the cord first, then assess", "correct": false, "feedback": "Per NRP, if the newborn is not vigorous, the focus is on the initial steps at the warmer. Delayed cord clamping is recommended for vigorous newborns, but for a non-vigorous newborn, early cord clamping to bring the baby to the resuscitation team is appropriate." }
+          ]
+        },
+        {
+          "prompt": "After initial steps (30 seconds), the newborn has gasping respirations and HR is 80 by auscultation. Per NRP, what's next?",
+          "options": [
+            { "text": "Begin PPV (positive pressure ventilation) with 21% O2 for term newborns at rate 40-60 breaths/min", "correct": true, "feedback": "Correct per NRP. If HR <100 or gasping/apneic after initial steps → begin PPV. For term newborns, start with 21% O2 (room air). Rate: 40-60 breaths/min (squeeze-two-three, squeeze-two-three). Assess HR after 15 seconds of effective PPV. HR should increase — if it doesn't, focus on ventilation corrective steps (MR SOPA)." },
+            { "text": "Begin PPV with 100% O2", "correct": false, "feedback": "Per current NRP, start term newborns on 21% O2 (room air), NOT 100%. Titrate up based on pre-ductal SpO2. Starting at 100% causes oxidative stress and is no longer recommended. Preterm infants (<35 weeks) start at 21-30%." },
+            { "text": "Start chest compressions — HR is below 100", "correct": false, "feedback": "Per NRP, compressions start when HR <60 DESPITE effective PPV for 30 seconds. HR of 80 with gasping = give PPV first. The vast majority of newborns respond to effective ventilation alone — ventilation is the MOST important step in neonatal resuscitation." }
+          ]
+        },
+        {
+          "prompt": "You've been giving PPV for 30 seconds. HR is now 50 and not improving. You've done MR SOPA corrective steps. Per NRP, what's next?",
+          "options": [
+            { "text": "Begin chest compressions — 3:1 ratio (3 compressions to 1 ventilation) with 100% O2", "correct": true, "feedback": "Correct per NRP. If HR <60 despite 30 seconds of effective PPV → begin coordinated chest compressions and ventilations at a 3:1 ratio (90 compressions + 30 breaths = 120 events per minute). Increase O2 to 100% when starting compressions. Use the two-thumb encircling technique. Compress 1/3 of the AP diameter of the chest." },
+            { "text": "Chest compressions at 15:2 ratio like PALS", "correct": false, "feedback": "NRP uses a 3:1 ratio, NOT 15:2. The 3:1 ratio is specific to neonatal resuscitation because neonatal arrests are almost always respiratory in origin — the higher ventilation rate addresses the primary problem (hypoxia)." },
+            { "text": "Give epinephrine first before starting compressions", "correct": false, "feedback": "Per NRP, epinephrine is given if HR remains <60 AFTER effective ventilation AND at least 60 seconds of coordinated compressions + ventilations. Compressions come before epinephrine." }
+          ]
+        },
+        {
+          "prompt": "After 60 seconds of coordinated compressions and ventilations with 100% O2, HR remains <60. Per NRP, what's the next step?",
+          "options": [
+            { "text": "Epinephrine 0.01-0.03 mg/kg IV (via UVC) — preferred route is umbilical venous catheter", "correct": true, "feedback": "Correct per NRP. Epinephrine dose: 0.01-0.03 mg/kg (0.1-0.3 mL/kg of 1:10,000) IV via umbilical venous catheter (UVC). UVC is the preferred IV access in neonatal resuscitation — quick to place. If IV not available, may give via endotracheal tube at higher dose (0.05-0.1 mg/kg) while establishing IV access. Repeat every 3-5 minutes." },
+            { "text": "Epinephrine 0.01 mg/kg IM in the thigh", "correct": false, "feedback": "IM epinephrine is for anaphylaxis, not neonatal resuscitation. Per NRP, epinephrine is given IV (preferably via UVC) or via ETT if no IV access. The newborn's perfusion is too poor for IM absorption." },
+            { "text": "Atropine 0.02 mg/kg IV", "correct": false, "feedback": "Atropine has NO role in neonatal resuscitation per NRP. The medications used in NRP are: epinephrine and volume expansion (normal saline 10 mL/kg if suspected blood loss/hypovolemia). Atropine is not part of the NRP algorithm." }
+          ]
+        },
+        {
+          "prompt": "Key NRP concept: what is MR SOPA?",
+          "options": [
+            { "text": "Ventilation corrective steps: Mask adjustment, Reposition head, Suction, Open mouth, increase Pressure, Alternative airway", "correct": true, "feedback": "Correct per NRP. MR SOPA is the systematic approach to correcting ineffective PPV:\n- M = Mask adjustment (ensure seal, no leak)\n- R = Reposition head (sniffing position)\n- S = Suction mouth and nose\n- O = Open mouth slightly\n- P = increase Pressure gradually\n- A = Alternative airway (LMA or intubation)\nIf PPV isn't working (chest not rising, HR not improving), work through MR SOPA before escalating." },
+            { "text": "A medication dosing protocol for neonates", "correct": false, "feedback": "MR SOPA is not about medications — it's a ventilation troubleshooting mnemonic. It stands for Mask, Reposition, Suction, Open mouth, Pressure, Alternative airway. It's used when PPV isn't producing visible chest rise or HR improvement." },
+            { "text": "A scoring system for newborn assessment", "correct": false, "feedback": "You may be thinking of APGAR scores. MR SOPA is specifically for troubleshooting ineffective positive pressure ventilation during neonatal resuscitation." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bls-infant",
+      "title": "Infant BLS / Choking (AHA BLS)",
+      "scenario": "You're at a family gathering. A 6-month-old suddenly becomes silent, turns blue, and can't cry or cough.",
+      "steps": [
+        {
+          "prompt": "A 6-month-old infant is choking — can't cry, cough, or breathe. Per BLS, what is the correct response for a conscious choking infant?",
+          "options": [
+            { "text": "5 back slaps (between shoulder blades) then 5 chest thrusts — alternate until object is expelled or infant becomes unresponsive", "correct": true, "feedback": "Correct per BLS. For infant choking (conscious): hold infant face-down on your forearm (supporting the head), deliver 5 back slaps between the shoulder blades with the heel of your hand. Flip infant face-up, deliver 5 chest thrusts (same location as CPR compressions — just below the nipple line, using 2 fingers). Alternate until object is expelled or infant becomes unresponsive." },
+            { "text": "Abdominal thrusts (Heimlich maneuver)", "correct": false, "feedback": "NEVER perform abdominal thrusts on an infant. The risk of abdominal organ injury is too high. Per BLS, infant choking uses back slaps and CHEST thrusts (not abdominal). The Heimlich maneuver is for children >1 year and adults only." },
+            { "text": "Blind finger sweep of the mouth", "correct": false, "feedback": "NEVER do a blind finger sweep in an infant or child. You may push the object deeper. Per BLS, only remove an object you can SEE. Focus on back slaps and chest thrusts to expel the object." }
+          ]
+        },
+        {
+          "prompt": "The infant becomes unresponsive. Per BLS, what do you do?",
+          "options": [
+            { "text": "Place infant on firm surface, begin CPR starting with compressions — look for object in mouth before each ventilation attempt", "correct": true, "feedback": "Correct per BLS. When a choking infant becomes unresponsive: (1) Place on firm flat surface. (2) Activate emergency response (call 911). (3) Begin CPR starting with 30 compressions (single rescuer) or 15 (two HCP rescuers). (4) Before each ventilation attempt, open the mouth and LOOK — remove the object only if you can SEE it. (5) Attempt ventilation. If chest doesn't rise, reposition and try again." },
+            { "text": "Continue back slaps and chest thrusts — don't switch to CPR", "correct": false, "feedback": "Once the infant becomes unresponsive, per BLS you transition to CPR. Back slaps and chest thrusts are for the CONSCIOUS choking infant. CPR compressions may help dislodge the object while also providing circulation." },
+            { "text": "Attempt rescue breaths first before compressions", "correct": false, "feedback": "Per BLS, start with compressions (C-A-B), not breaths. Before each ventilation attempt, look in the mouth for the object. The compressions may help dislodge the foreign body." }
+          ]
+        },
+        {
+          "prompt": "Key BLS concept: what are the differences in infant CPR compared to adult/child CPR?",
+          "options": [
+            { "text": "2-finger or 2-thumb technique, depth 1.5 inches, 30:2 single rescuer / 15:2 two HCP rescuers, pulse check at brachial artery", "correct": true, "feedback": "Correct per BLS. Infant CPR differences: Compressions with 2 fingers (single rescuer) or 2-thumb encircling hands technique (2 rescuers — preferred). Depth: at least 1/3 AP diameter (~1.5 inches). Rate: 100-120/min. Ratio: 30:2 (single) or 15:2 (two HCPs). Pulse check: brachial artery (inside of upper arm), not carotid. AED: use pediatric pads/dose attenuator if available." },
+            { "text": "Same technique as adults but gentler", "correct": false, "feedback": "Infant CPR has specific technique differences, not just 'gentler adult CPR.' Two fingers or two-thumb technique (not heel of hand), shallower depth (1.5 inches vs 2 inches), brachial pulse check (not carotid), and different ratios with 2 rescuers (15:2 vs 30:2)." },
+            { "text": "One-hand compressions, same depth as children", "correct": false, "feedback": "Infant compressions use 2 fingers (single rescuer) or 2-thumb encircling technique (2 rescuers), not one hand. Depth is at least 1.5 inches (~1/3 AP diameter), which is less than children (~2 inches)." }
+          ]
+        }
+      ]
     }
   ],
   "drugs": [
