@@ -1,80 +1,51 @@
-/* ClinicalKB Study — Main App Logic */
+/* ClinicalKB Study v2 — 6-Mode Study App */
 
 (function () {
   'use strict';
 
-  // ==================== STATE ====================
-  let DB = null;           // Full KB data
-  let progress = {};       // Per-note progress tracking
-  let session = null;      // Current study session state
-  let currentView = 'home';
-  let browseFilter = 'All';
-  let browseSearch = '';
-  let previousView = 'home';
+  var DB = null;
+  var STUDY = null;
+  var progress = {};
+  var searchIndex = {};
+  var currentView = 'home';
+  var previousView = 'home';
+  var browseFilter = 'All';
+  var browseSearch = '';
+  var todaySelections = null;
+  var codeState = null;
 
-  const STORAGE_KEY = 'clinicalkb-progress';
-  const SESSION_KEY = 'clinicalkb-session-v4';
-  const STREAK_KEY = 'clinicalkb-streak';
-  const DARK_KEY = 'clinicalkb-dark';
-  const COOLDOWN_DAYS = 3;
-
-  // ==================== SECTION LOOKUP ====================
-  // Many notes use non-standard section keys (e.g. "ed-management" instead of "management",
-  // "pathophysiology-how-hyperglycemia-damages-nerves" instead of "pathophysiology").
-  // This helper finds the best matching section content for a given key.
-  // It prioritizes ED-specific sections (e.g. "ed-management" over "management")
-  // so the app shows acute/emergency content rather than screening/prevention.
-  function findSectionMatch(note, key) {
-    if (!note || !note.sections) return '';
-    var keys = Object.keys(note.sections);
-    // 1. Check for ED-specific version first (e.g. "ed-management", "ed-management-stepwise-approach")
-    var edKey = 'ed-' + key;
-    var edMatch = keys.filter(function (k) { return k.indexOf(edKey) === 0; });
-    if (edMatch.length > 0) return edMatch[0];
-    // 2. Exact match
-    if (note.sections[key]) return key;
-    // 3. Keys that start with the target
-    var startsWith = keys.filter(function (k) { return k.indexOf(key) === 0; });
-    if (startsWith.length > 0) return startsWith[0];
-    // 4. Keys that contain the target (e.g. "ed-management" contains "management")
-    var contains = keys.filter(function (k) { return k.indexOf(key) !== -1; });
-    if (contains.length > 0) return contains[0];
-    return '';
-  }
-
-  function findSection(note, key) {
-    var matched = findSectionMatch(note, key);
-    return matched ? note.sections[matched] : '';
-  }
-
-  function findSectionKey(note, key) {
-    return findSectionMatch(note, key) || key;
-  }
+  var STORAGE_KEY = 'clinicalkb-progress';
+  var SELECTIONS_KEY = 'clinicalkb-selections-v2';
+  var STREAK_KEY = 'clinicalkb-streak';
+  var DARK_KEY = 'clinicalkb-dark';
+  var COOLDOWN_DAYS = 3;
 
   // ==================== INIT ====================
   async function init() {
     loadProgress();
     loadDarkMode();
     try {
-      const resp = await fetch('data.json');
+      var resp = await fetch('data.json');
       DB = await resp.json();
+      var resp2 = await fetch('study.json');
+      STUDY = await resp2.json();
+      buildSearchIndex();
+      pickTodaySelections();
       renderHome();
       setupNav();
       setupDarkToggle();
     } catch (e) {
       document.getElementById('main').innerHTML =
-        '<div class="card" style="margin-top:40px;text-align:center;">' +
-        '<p style="font-size:16px;font-weight:600;">Could not load data</p>' +
-        '<p style="color:var(--text-muted);margin-top:8px;">Make sure data.json is in the same folder as index.html</p></div>';
+        '<div style="padding:40px 20px;text-align:center">' +
+        '<p style="font-size:16px;font-weight:600">Could not load data</p>' +
+        '<p style="color:var(--text-muted);margin-top:8px">' + escapeHtml(e.message) + '</p></div>';
     }
   }
 
   // ==================== STORAGE ====================
   function loadProgress() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      progress = raw ? JSON.parse(raw) : {};
-    } catch { progress = {}; }
+    try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch (e) { progress = {}; }
   }
 
   function saveProgress() {
@@ -89,45 +60,47 @@
   }
 
   function recordView(noteId, confidence) {
-    const p = getNoteProgress(noteId);
-    p.lastSeen = new Date().toISOString().slice(0, 10);
+    var p = getNoteProgress(noteId);
+    p.lastSeen = todayStr();
     p.timesSeen++;
     if (confidence) {
-      if (confidence === 'solid' && p.confidence === 'solid') {
-        p.streak++;
-      } else if (confidence === 'solid') {
-        p.streak = 1;
-      } else {
-        p.streak = 0;
-      }
+      p.streak = (confidence === 'solid' && p.confidence === 'solid') ? p.streak + 1 :
+                 (confidence === 'solid') ? 1 : 0;
       p.confidence = confidence;
     }
     saveProgress();
   }
 
-  function getStreak() {
-    try {
-      const raw = localStorage.getItem(STREAK_KEY);
-      const data = raw ? JSON.parse(raw) : { count: 0, lastDate: null };
-      const today = new Date().toISOString().slice(0, 10);
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-      if (data.lastDate === today) return data;
-      if (data.lastDate === yesterday) return data; // streak continues if they do today
-      if (data.lastDate && data.lastDate < yesterday) return { count: 0, lastDate: data.lastDate };
-      return data;
-    } catch { return { count: 0, lastDate: null }; }
+  function markSeen(noteId) {
+    if (!noteId) return;
+    var p = getNoteProgress(noteId);
+    if (p.lastSeen !== todayStr()) {
+      p.lastSeen = todayStr();
+      p.timesSeen++;
+      saveProgress();
+    }
   }
 
-  function completeSessionStreak() {
-    const today = new Date().toISOString().slice(0, 10);
-    const streak = getStreak();
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    if (streak.lastDate === today) return streak; // already counted today
-    if (streak.lastDate === yesterday || streak.lastDate === today) {
-      streak.count++;
-    } else {
-      streak.count = 1;
-    }
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+  function getStreak() {
+    try {
+      var data = JSON.parse(localStorage.getItem(STREAK_KEY)) || { count: 0, lastDate: null };
+      var today = todayStr();
+      var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      if (data.lastDate === today) return data;
+      if (data.lastDate === yesterday) return data;
+      if (data.lastDate && data.lastDate < yesterday) return { count: 0, lastDate: data.lastDate };
+      return data;
+    } catch (e) { return { count: 0, lastDate: null }; }
+  }
+
+  function bumpStreak() {
+    var today = todayStr();
+    var streak = getStreak();
+    var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (streak.lastDate === today) return streak;
+    streak.count = (streak.lastDate === yesterday) ? streak.count + 1 : 1;
     streak.lastDate = today;
     localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
     return streak;
@@ -135,7 +108,7 @@
 
   // ==================== DARK MODE ====================
   function loadDarkMode() {
-    const dark = localStorage.getItem(DARK_KEY);
+    var dark = localStorage.getItem(DARK_KEY);
     if (dark === 'true' || (!dark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.body.classList.add('dark');
     }
@@ -145,20 +118,19 @@
     document.getElementById('dark-toggle').addEventListener('click', function () {
       document.body.classList.toggle('dark');
       localStorage.setItem(DARK_KEY, document.body.classList.contains('dark'));
-      const icon = document.getElementById('dark-icon');
-      icon.textContent = document.body.classList.contains('dark') ? '\u2600' : '\u263E';
+      updateDarkIcon();
     });
-    const icon = document.getElementById('dark-icon');
-    icon.textContent = document.body.classList.contains('dark') ? '\u2600' : '\u263E';
+    updateDarkIcon();
+  }
+
+  function updateDarkIcon() {
+    document.getElementById('dark-icon').textContent = document.body.classList.contains('dark') ? '☀' : '☾';
   }
 
   // ==================== NAVIGATION ====================
   function setupNav() {
     document.querySelectorAll('.nav-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var view = btn.dataset.view;
-        showView(view);
-      });
+      btn.addEventListener('click', function () { showView(btn.dataset.view); });
     });
   }
 
@@ -166,75 +138,33 @@
     previousView = currentView;
     currentView = viewName;
     document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
-    document.getElementById('view-' + viewName).classList.add('active');
+    var el = document.getElementById('view-' + viewName);
+    if (el) el.classList.add('active');
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === viewName);
     });
 
-    // Update topbar title
     var titles = {
-      home: 'ClinicalKB Study',
-      scenario: 'Today\'s Case',
-      pharm: 'Pharm Flash',
-      concept: 'Concept Check',
-      pearls: 'Quick Hits',
-      complete: 'Session Complete',
-      progress: 'Progress',
-      browse: 'Browse',
-      note: 'Note Detail'
+      home: 'ClinicalKB Study', presentation: 'Presentation', condition: 'Condition',
+      anatomy: 'A&P', medclass: 'Med Class', principle: 'Principle', code: 'Code',
+      progress: 'Progress', browse: 'Browse', note: 'Note Detail'
     };
     document.getElementById('topbar-title').textContent = titles[viewName] || 'ClinicalKB Study';
 
-    // Show/hide topbar back button for note view
     var backBtn = document.getElementById('topbar-back');
     if (backBtn) backBtn.style.display = (viewName === 'note') ? 'block' : 'none';
 
-    // Render views
     if (viewName === 'home') renderHome();
     if (viewName === 'progress') renderDashboard();
     if (viewName === 'browse') renderBrowse();
+
+    document.getElementById('main').scrollTop = 0;
   }
 
-  // ==================== SELECTION ALGORITHM ====================
-  function selectNote(category) {
-    var ids = DB.categories[category];
-    if (!ids || ids.length === 0) return null;
-
-    var today = new Date().toISOString().slice(0, 10);
-    var scored = ids.map(function (id) {
-      var p = progress[id] || {};
-      var daysSince = p.lastSeen
-        ? Math.floor((Date.now() - new Date(p.lastSeen).getTime()) / 86400000)
-        : 999;
-      // Higher score = more likely to be selected
-      var score = daysSince;
-      // Boost notes never seen
-      if (!p.lastSeen) score += 100;
-      // Boost notes rated needs-review or study-more
-      if (p.confidence === 'needs-review') score += 20;
-      if (p.confidence === 'study-more') score += 40;
-      // Penalize recently seen
-      if (daysSince < COOLDOWN_DAYS) score = -1;
-      return { id: id, score: score };
-    });
-
-    // Filter out cooled-down notes
-    var eligible = scored.filter(function (s) { return s.score > 0; });
-    // If all are on cooldown, just use all
-    if (eligible.length === 0) eligible = scored;
-
-    // Sort by score descending, take top 15, pick using daily seed (stable for 24h)
-    eligible.sort(function (a, b) { return b.score - a.score; });
-    var pool = eligible.slice(0, Math.min(15, eligible.length));
-    var daySeed = getDaySeed(category);
-    return pool[daySeed % pool.length].id;
-  }
-
-  // Deterministic daily seed — same date + salt = same number all day
+  // ==================== SPACED REPETITION ====================
   function getDaySeed(salt) {
     var today = new Date();
     var base = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    // Simple hash: mix in the salt string
     var h = base;
     if (salt) {
       for (var i = 0; i < salt.length; i++) {
@@ -244,1162 +174,518 @@
     return Math.abs(h);
   }
 
-  // Seeded pseudo-random for stable daily shuffles
   function seededShuffle(arr, seed) {
     var s = seed;
-    function next() {
-      s = (s * 1103515245 + 12345) & 0x7fffffff;
-      return s / 0x7fffffff;
-    }
+    function next() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
     var copy = arr.slice();
     for (var i = copy.length - 1; i > 0; i--) {
       var j = Math.floor(next() * (i + 1));
-      var tmp = copy[i];
-      copy[i] = copy[j];
-      copy[j] = tmp;
+      var tmp = copy[i]; copy[i] = copy[j]; copy[j] = tmp;
     }
     return copy;
   }
 
-  function selectRandomPearls(count) {
-    var allPearls = [];
-    Object.keys(DB.notes).sort().forEach(function (id) {
-      var note = DB.notes[id];
-      if (note.clinicalPearls) {
-        note.clinicalPearls.forEach(function (pearl) {
-          allPearls.push({ pearl: pearl, noteId: id, noteTitle: note.title, category: note.category });
-        });
-      }
+  function selectFromPool(pool, salt) {
+    if (!pool || pool.length === 0) return null;
+    var scored = pool.map(function (item) {
+      var id = item.id || item;
+      var p = progress[id] || {};
+      var daysSince = p.lastSeen ? Math.floor((Date.now() - new Date(p.lastSeen).getTime()) / 86400000) : 999;
+      var score = daysSince;
+      if (!p.lastSeen) score += 100;
+      if (p.confidence === 'needs-review') score += 20;
+      if (p.confidence === 'study-more') score += 40;
+      if (daysSince < COOLDOWN_DAYS) score = -1;
+      return { item: item, score: score };
     });
-    // Stable daily shuffle
-    var shuffled = seededShuffle(allPearls, getDaySeed('pearls'));
-    return shuffled.slice(0, count);
+    var eligible = scored.filter(function (s) { return s.score > 0; });
+    if (eligible.length === 0) eligible = scored;
+    eligible.sort(function (a, b) { return b.score - a.score; });
+    var top = eligible.slice(0, Math.min(10, eligible.length));
+    var picked = top[getDaySeed(salt) % top.length];
+    return picked.item;
   }
 
-  // Pick the most relevant pharmacology note for a condition.
-  // Ranks by how often the drug class is mentioned in the condition's
-  // management and pathophysiology sections — the most-mentioned class
-  // is the most clinically relevant (e.g. diuretics for heart failure).
-  function selectRelatedPharm(conditionId) {
-    if (!conditionId) return null;
-    var condNote = DB.notes[conditionId];
-    if (!condNote) return null;
-    var related = (DB.graph[conditionId] || []).filter(function (id) {
-      return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
-    });
-    if (related.length === 0) return null;
-    if (related.length === 1) return related[0];
-
-    // Build a relevance corpus from the condition's key sections
-    var corpus = '';
-    ['management', 'pathophysiology', 'clinicalFeatures', 'mechanism'].forEach(function (key) {
-      var text = findSection(condNote, key);
-      if (text) corpus += ' ' + text.toLowerCase();
-    });
-
-    // Score each pharm note by how often its title/aliases appear in the corpus
-    var scored = related.map(function (id) {
-      var pNote = DB.notes[id];
-      var terms = [pNote.title.toLowerCase()];
-      if (pNote.aliases) {
-        pNote.aliases.forEach(function (a) { terms.push(a.toLowerCase()); });
-      }
-      // Also match the slug with spaces (e.g. "vasopressors and inotropes")
-      terms.push(id.replace(/-/g, ' '));
-      // Count mentions
-      var score = 0;
-      terms.forEach(function (t) {
-        if (t.length < 3) return;
-        var idx = 0;
-        while ((idx = corpus.indexOf(t, idx)) !== -1) { score++; idx += t.length; }
-      });
-      return { id: id, score: score };
-    });
-
-    // Sort by score descending, then use daily seed to pick among top scorers
-    scored.sort(function (a, b) { return b.score - a.score; });
-    var topScore = scored[0].score;
-    // If there's a clear winner, use it; otherwise pick among tied top scorers
-    var topTier = scored.filter(function (s) { return s.score >= topScore * 0.6 && s.score > 0; });
-    if (topTier.length === 0) topTier = scored; // all zero — fallback to random
-    var ids = topTier.map(function (s) { return s.id; });
-    var shuffled = seededShuffle(ids, getDaySeed('pharm-related'));
-    return shuffled[0];
-  }
-
-  // Pick a concept related to today's condition (from the knowledge graph)
-  function selectRelatedConcept(conditionId) {
-    if (!conditionId) return null;
-    var related = (DB.graph[conditionId] || []).filter(function (id) {
-      return DB.notes[id] && DB.notes[id].category === 'Concepts';
-    });
-    if (related.length === 0) return null;
-    // Pick using daily seed for stability
-    var shuffled = seededShuffle(related, getDaySeed('concept-related'));
-    return shuffled[0];
-  }
-
-  // ==================== SESSION ====================
-  function getTodayStr() {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  function saveSession() {
-    if (!session) return;
+  // ==================== TODAY'S SELECTIONS ====================
+  function pickTodaySelections() {
     try {
-      // Only save the note selections, not progress — user wants a fresh
-      // start each time but the same notes all day
-      var data = {
-        date: getTodayStr(),
-        conditionId: session.conditionId,
-        pharmId: session.pharmId,
-        conceptId: session.conceptId,
-        pearls: session.pearls,
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(data));
-    } catch (e) { /* ignore */ }
-  }
+      var saved = JSON.parse(localStorage.getItem(SELECTIONS_KEY));
+      if (saved && saved.date === todayStr()) { todaySelections = saved; return; }
+    } catch (e) {}
 
-  function loadSavedSession() {
-    try {
-      var raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return null;
-      var data = JSON.parse(raw);
-      if (data.date !== getTodayStr()) return null;
-      if (!DB.notes[data.conditionId] || !DB.notes[data.pharmId]) return null;
-      return data;
-    } catch (e) { return null; }
-  }
+    var condition = selectFromPool(STUDY.conditions, 'condition');
+    var anatomy = condition ? STUDY.anatomy.find(function (a) { return a.id === condition.system; }) : STUDY.anatomy[0];
+    var medclass = condition ? STUDY.medications.find(function (m) { return m.id === condition.medClass; }) : STUDY.medications[0];
+    var presentation = selectFromPool(STUDY.presentations, 'presentation');
+    var principle = selectFromPool(STUDY.principles, 'principle');
+    var code = selectFromPool(STUDY.codes, 'code');
 
-  function startSession() {
-    // Use today's saved note selections but always start fresh
-    var saved = loadSavedSession();
-    if (saved) {
-      session = {
-        conditionId: saved.conditionId,
-        pharmId: saved.pharmId,
-        conceptId: saved.conceptId,
-        pearls: saved.pearls,
-        scenarioStep: 0,
-        scenarioRevealed: {},
-        ratings: {},
-        pearlIndex: 0,
-      };
-    } else {
-      var conditionId = selectNote('Conditions');
-      // Prefer a pharmacology note related to today's condition
-      var pharmId = selectRelatedPharm(conditionId) || selectNote('Pharmacology');
-      // Prefer a concept related to today's condition
-      var conceptId = selectRelatedConcept(conditionId) || selectNote('Concepts');
-      var pearls = selectRandomPearls(3);
-
-      session = {
-        conditionId: conditionId,
-        pharmId: pharmId,
-        conceptId: conceptId,
-        pearls: pearls,
-        scenarioStep: 0,
-        scenarioRevealed: {},
-        ratings: {},
-        pearlIndex: 0,
-      };
-      // Mark all three notes as seen immediately so they rotate tomorrow
-      // (even if user doesn't rate them)
-      markSeen(conditionId);
-      markSeen(pharmId);
-      markSeen(conceptId);
-      saveSession();
-    }
-
-    renderScenario();
-    showView('scenario');
-  }
-
-  // Mark a note as seen today (for cooldown rotation) without changing confidence
-  function markSeen(noteId) {
-    if (!noteId) return;
-    var p = getNoteProgress(noteId);
-    if (!p.lastSeen || p.lastSeen !== new Date().toISOString().slice(0, 10)) {
-      p.lastSeen = new Date().toISOString().slice(0, 10);
-      p.timesSeen++;
-      saveProgress();
-    }
-  }
-
-  // ==================== SCENARIO RENDERING ====================
-  function renderScenario() {
-    var note = DB.notes[session.conditionId];
-    if (!note) return;
-
-    var steps = [
-      { label: 'Patient Presentation', key: 'presentation' },
-      { label: 'Differential', key: 'differential' },
-      { label: 'Pathophysiology', key: 'pathophysiology' },
-      { label: 'Diagnostics', key: 'diagnostics' },
-      { label: 'Management & Pharmacology', key: 'management' },
-      { label: 'Nursing Priorities', key: 'nursing' },
-      { label: 'Clinical Pearls', key: 'pearls' },
-    ];
-    var step = session.scenarioStep;
-
-    // Progress dots
-    var dotsHtml = steps.map(function (s, i) {
-      var cls = i < step ? 'done' : (i === step ? 'current' : '');
-      return '<div class="progress-dot ' + cls + '"></div>';
-    }).join('');
-    document.getElementById('scenario-progress').innerHTML = dotsHtml;
-
-    var card = document.getElementById('scenario-card');
-    var actions = document.getElementById('scenario-actions');
-
-    switch (step) {
-      case 0: renderPresentation(note, card, actions); break;
-      case 1: renderDifferential(note, card, actions); break;
-      case 2: renderPathophys(note, card, actions); break;
-      case 3: renderDiagnostics(note, card, actions); break;
-      case 4: renderManagement(note, card, actions); break;
-      case 5: renderNursing(note, card, actions); break;
-      case 6: renderScenarioPearls(note, card, actions); break;
-    }
-  }
-
-  function buildVignette(note) {
-    var hints = note.scenarioHints || {};
-    var signs = hints.signs || [];
-    var features = findSection(note, 'clinicalFeatures') || '';
-    var allText = features + ' ' + (findSection(note, 'definition') || '') + ' ' + (findSection(note, 'pathophysiology') || '');
-
-    var demographics = generateDemographics(note);
-    var chiefComplaint = extractChiefComplaint(note);
-    var vitals = extractVitals(hints, allText);
-
-    // Filter out findings you wouldn't see at triage — only keep things
-    // visible to eyes/ears or reported by the patient
-    var NOT_TRIAGE_VISIBLE = /hepatomegaly|splenomegaly|organomegaly|biopsy|histolog|microscop|patholog|imaging|ct\s|mri\s|x-ray|radiograph|ultrasound|echocardiogra|angiogra|endoscop|colonoscop|lab\s|serum\s|elevated\s(creatinine|troponin|lactate|bilirubin|bnp|ast|alt|inr|d-dimer)|pleural effusion on|pericardial effusion|ejection fraction|glomerular|bun\s|gfr\s|culture|gram stain|lumbar puncture|csf\s|arterial blood gas|abg\s|ekg\s|ecg\s|electrocardiogram|st[\s-]+(elevation|depression|segment)|t-wave|qrs|rhythm strip|troponin|bnp|d-dimer|ct (shows|reveals|demonstrates)|chest x-ray (shows|reveals)|renal biopsy|liver biopsy|bone marrow|cytology/i;
-
-    // Clean and filter presenting features from signs
-    var presentingFeatures = signs.slice(0, 8).map(function (s) {
-      return s.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').replace(/\[\[.*?\]\]/g, '')
-              .split('—')[0].split('--')[0].split('(')[0].trim();
-    }).filter(function(s) {
-      var lower = s.toLowerCase();
-      var titleLower = note.title.toLowerCase();
-      var titleWords = titleLower.split(/\s+/);
-      var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
-      // Filter: right length, doesn't give away dx, and is triage-visible
-      return s.length > 5 && s.length < 80 && !giveaway && !NOT_TRIAGE_VISIBLE.test(lower);
-    });
-
-    // If we don't have enough signs, try extracting from clinical features text directly
-    if (presentingFeatures.length < 2 && features) {
-      var lines = features.split('\n');
-      for (var i = 0; i < lines.length && presentingFeatures.length < 4; i++) {
-        var line = lines[i].trim();
-        if ((line.startsWith('- ') || line.startsWith('* ')) && line.length > 10 && line.length < 80) {
-          var cleaned = line.substring(2).replace(/\*\*/g, '').replace(/\[.*?\]/g, '')
-                          .split('—')[0].split('--')[0].split('(')[0].trim();
-          var lower = cleaned.toLowerCase();
-          var titleWords = note.title.toLowerCase().split(/\s+/);
-          var giveaway = titleWords.some(function(w) { return w.length > 4 && lower.indexOf(w) !== -1; });
-          if (!giveaway && cleaned.length > 5 && !NOT_TRIAGE_VISIBLE.test(lower)) {
-            presentingFeatures.push(cleaned);
-          }
-        }
-      }
-    }
-
-    // If still no vitals, generate plausible baseline vitals
-    if (!vitals) {
-      vitals = 'Vitals: BP 138/86, HR 92, RR 18, T 37.1C, SpO2 96% on RA.';
-    }
-
-    var vignette = demographics + '. Chief complaint: ' + chiefComplaint + '. ' + vitals;
-    if (presentingFeatures.length > 0) {
-      vignette += ' On assessment: ' + presentingFeatures.slice(0, 4).join('; ') + '.';
-    }
-    return vignette;
-  }
-
-  function generateDemographics(note) {
-    var ages = ['42', '55', '67', '73', '28', '61', '38', '81', '49', '56'];
-    var sexes = ['M', 'F'];
-    var transports = ['presents to ED', 'brought in by EMS', 'walks into triage', 'transferred from urgent care'];
-    var seed = getDaySeed(note.id);
-    var age = ages[seed % ages.length];
-    var sex = sexes[Math.floor(seed / 10) % sexes.length];
-    var transport = transports[Math.floor(seed / 100) % transports.length];
-    return age + sex + ' ' + transport;
-  }
-
-  function extractChiefComplaint(note) {
-    var title = note.title.toLowerCase();
-    // Map common conditions to realistic chief complaints (what the PATIENT says)
-    var complaints = {
-      'sepsis': 'fever, confusion, and weakness',
-      'stemi': 'sudden crushing chest pain radiating to left arm',
-      'nstemi': 'intermittent chest pressure and shortness of breath',
-      'myocardial infarction': 'sudden crushing chest pain',
-      'stroke': 'sudden onset facial droop and left-sided weakness',
-      'pneumonia': 'productive cough, fever, and shortness of breath',
-      'heart failure': 'progressive shortness of breath and lower extremity edema',
-      'copd': 'worsening dyspnea and increased sputum production',
-      'asthma': 'acute wheezing and difficulty breathing',
-      'anaphylaxis': 'sudden swelling, hives, and difficulty breathing after exposure',
-      'pulmonary embolism': 'sudden pleuritic chest pain and dyspnea',
-      'cardiac arrest': 'witnessed collapse, unresponsive',
-      'dka': 'nausea, vomiting, abdominal pain, and fruity breath',
-      'diabetic ketoacidosis': 'nausea, vomiting, abdominal pain, and fruity breath',
-      'pancreatitis': 'severe epigastric pain radiating to back',
-      'appendicitis': 'periumbilical pain migrating to RLQ',
-      'atrial fibrillation': 'palpitations and irregular heartbeat',
-      'hypertension': 'severe headache and blurred vision',
-      'aortic': 'sudden tearing chest pain radiating to back',
-      'tamponade': 'chest pain, dyspnea, and muffled heart sounds',
-      'kidney injury': 'decreased urine output, nausea, and swelling',
-      'kidney disease': 'fatigue, decreased urine output, and swelling',
-      'gastrointestinal bleed': 'vomiting blood and dark tarry stools',
-      'gi bleed': 'vomiting blood and dark tarry stools',
-      'dvt': 'unilateral leg swelling, pain, and redness',
-      'deep vein': 'unilateral leg swelling, pain, and redness',
-      'cellulitis': 'spreading redness, warmth, and swelling on extremity',
-      'meningitis': 'severe headache, neck stiffness, and fever',
-      'seizure': 'witnessed convulsions and post-event confusion',
-      'overdose': 'found unresponsive with altered mental status',
-      'poisoning': 'nausea, vomiting, and altered mental status',
-      'fracture': 'extremity pain, swelling, and deformity after fall',
-      'pneumothorax': 'sudden chest pain and shortness of breath',
-      'ards': 'progressive respiratory distress and hypoxia',
-      'cirrhosis': 'abdominal distension, jaundice, and confusion',
-      'hepatitis': 'jaundice, fatigue, and RUQ pain',
-      'cholecystitis': 'RUQ pain after eating, nausea, and fever',
-      'bowel obstruction': 'abdominal pain, vomiting, and no bowel movements',
-      'diverticulitis': 'LLQ pain, fever, and change in bowel habits',
-      'ulcerative colitis': 'bloody diarrhea with urgency and cramping',
-      'crohn': 'abdominal pain, diarrhea, and weight loss',
-      'aneurysm': 'sudden severe pain and lightheadedness',
-      'uti': 'dysuria, frequency, and suprapubic pain',
-      'urinary tract': 'dysuria, frequency, and suprapubic pain',
-      'pyelonephritis': 'flank pain, fever, and painful urination',
-      'encephalitis': 'fever, headache, and altered mental status',
-      'endocarditis': 'persistent fever, fatigue, and new heart murmur',
-      'pericarditis': 'sharp chest pain worse with inspiration and lying flat',
-      'hyperkalemia': 'weakness, palpitations, and nausea',
-      'hyponatremia': 'confusion, headache, and nausea',
-      'hypoglycemia': 'tremor, diaphoresis, and confusion',
-      'thyroid storm': 'agitation, high fever, and racing heart',
-      'adrenal': 'weakness, hypotension, and abdominal pain',
-      'sickle cell': 'severe pain in chest and extremities',
-      'migraine': 'severe unilateral headache with nausea and photophobia',
-      'vertigo': 'room-spinning dizziness and nausea',
-      'bell': 'sudden onset unilateral facial weakness',
-      'guillain': 'progressive bilateral leg weakness ascending upward',
-      'myasthenia': 'progressive weakness, drooping eyelids, and difficulty swallowing',
-      'multiple sclerosis': 'visual changes, numbness, and balance problems',
-      'rhabdomyolysis': 'severe muscle pain, weakness, and dark urine',
-      'psychosis': 'agitation, disorganized speech, and paranoid ideation',
-      'delirium': 'acute confusion, agitation, and fluctuating awareness',
-      'depression': 'worsening mood, insomnia, and thoughts of self-harm',
-      'anxiety': 'chest tightness, palpitations, and feeling of impending doom',
-      'suicidal': 'expressing intent to self-harm',
-      'alcohol withdrawal': 'tremor, agitation, and visual hallucinations',
-      'opioid': 'found unresponsive with pinpoint pupils and respiratory depression',
-      'intoxication': 'altered mental status and unsteady gait',
-      'withdrawal': 'tremor, diaphoresis, and agitation',
-      'status epilepticus': 'continuous seizure activity for over 5 minutes',
-      'ectopic': 'lower abdominal pain, vaginal bleeding, and missed period',
-      'preeclampsia': 'headache, visual changes, and elevated blood pressure in pregnancy',
-      'placenta': 'painless vaginal bleeding in third trimester',
-      'burn': 'thermal injury with blistering and pain',
-      'hypothermia': 'found outdoors, confused, with core temp below 35C',
-      'heat stroke': 'confusion, hot dry skin, and core temp above 40C',
-      'drowning': 'submersion event with coughing and respiratory distress',
-      'spinal cord': 'loss of motor and sensory function below level of injury',
-      'compartment': 'severe extremity pain out of proportion, especially with passive stretch',
-      'acute coronary': 'chest pressure with diaphoresis and dyspnea',
-      'aortic dissection': 'sudden tearing chest pain radiating to back',
-      'aortic stenosis': 'exertional syncope, chest pain, and dyspnea',
-      'mitral': 'dyspnea on exertion, fatigue, and palpitations',
-      'cardiomyopathy': 'progressive dyspnea, fatigue, and lower extremity edema',
-      'myocarditis': 'chest pain, dyspnea, and recent viral illness',
-      'respiratory failure': 'progressive dyspnea, accessory muscle use, and cyanosis',
-      'pleural effusion': 'dyspnea and decreased breath sounds on one side',
-      'tension pneumo': 'severe dyspnea, tracheal deviation, and absent breath sounds',
-      'tuberculosis': 'chronic cough, night sweats, and weight loss',
-      'abscess': 'localized swelling, redness, warmth, and fluctuance',
-      'nephrolithiasis': 'severe colicky flank pain radiating to groin',
-      'kidney stone': 'severe colicky flank pain radiating to groin',
-      'testicular torsion': 'sudden onset severe scrotal pain and swelling',
-      'ovarian torsion': 'sudden onset severe unilateral pelvic pain with nausea',
-      'ischemic bowel': 'severe abdominal pain out of proportion to exam',
-      'intussusception': 'episodic abdominal pain, vomiting, and currant jelly stools',
-      'volvulus': 'abdominal distension, pain, and obstipation',
+    todaySelections = {
+      date: todayStr(),
+      conditionId: condition ? condition.id : null,
+      anatomyId: anatomy ? anatomy.id : null,
+      medclassId: medclass ? medclass.id : null,
+      presentationId: presentation ? presentation.id : null,
+      principleId: principle ? principle.id : null,
+      codeId: code ? code.id : null
     };
-    for (var key in complaints) {
-      if (title.indexOf(key) !== -1) return complaints[key];
-    }
-    // Fallback: build from clinical signs (never mention the condition name)
-    var hints = note.scenarioHints || {};
-    var signs = (hints.signs || []).slice(0, 3);
-    if (signs.length >= 2) {
-      var cleaned = signs.map(function(s) {
-        return s.replace(/\*\*/g, '').replace(/\(.*?\)/g, '').split('—')[0].split('--')[0].trim().toLowerCase();
-      }).filter(function(s) { return s.length > 3 && s.length < 60; });
-      if (cleaned.length >= 2) {
-        return cleaned.slice(0, 3).join(', ');
-      }
-    }
-    // Last resort: use a generic but realistic chief complaint
-    var generics = [
-      'not feeling right for the past few days',
-      'general malaise and worsening symptoms',
-      'feeling weak and unwell',
-      'worsening symptoms over the past 24 hours',
+    localStorage.setItem(SELECTIONS_KEY, JSON.stringify(todaySelections));
+  }
+
+  function getStudyItem(pool, id) {
+    if (!pool || !id) return null;
+    return pool.find(function (item) { return item.id === id; }) || null;
+  }
+
+  // ==================== HOME ====================
+  function renderHome() {
+    if (!DB || !STUDY) return;
+
+    var streak = getStreak();
+    var totalStudy = STUDY.conditions.length + STUDY.presentations.length + STUDY.principles.length + STUDY.codes.length;
+    var seenCount = 0;
+    [STUDY.conditions, STUDY.presentations, STUDY.principles, STUDY.codes].forEach(function (pool) {
+      pool.forEach(function (item) { if (progress[item.id] && progress[item.id].lastSeen) seenCount++; });
+    });
+
+    var statsHtml = '<div class="home-stats-compact">';
+    statsHtml += '<span class="home-stat">' + streak.count + ' day streak</span>';
+    statsHtml += '<span class="home-stat-sep">&middot;</span>';
+    statsHtml += '<span class="home-stat">' + seenCount + '/' + totalStudy + ' studied</span>';
+    statsHtml += '</div>';
+    document.getElementById('home-stats-row').innerHTML = statsHtml;
+
+    var condition = getStudyItem(STUDY.conditions, todaySelections.conditionId);
+    var anatomy = getStudyItem(STUDY.anatomy, todaySelections.anatomyId);
+    var medclass = getStudyItem(STUDY.medications, todaySelections.medclassId);
+    var presentation = getStudyItem(STUDY.presentations, todaySelections.presentationId);
+    var principle = getStudyItem(STUDY.principles, todaySelections.principleId);
+    var code = getStudyItem(STUDY.codes, todaySelections.codeId);
+
+    var modes = [
+      { key: 'presentation', label: 'Presentation', sub: presentation ? presentation.chiefComplaint : 'None available', color: 'var(--accent)', icon: '&#128203;' },
+      { key: 'condition', label: 'Condition', sub: condition ? condition.title : 'None available', color: 'var(--red)', icon: '&#129657;' },
+      { key: 'anatomy', label: 'A&P', sub: anatomy ? anatomy.title : 'None available', color: 'var(--green)', icon: '&#129516;', trio: true },
+      { key: 'medclass', label: 'Med Class', sub: medclass ? medclass.title : 'None available', color: 'var(--green)', icon: '&#128138;', trio: true },
+      { key: 'principle', label: 'Principle', sub: principle ? principle.title : 'None available', color: 'var(--amber)', icon: '&#9889;' },
+      { key: 'code', label: 'Code', sub: code ? code.title : 'None available', color: 'var(--red)', icon: '&#9888;' }
     ];
-    return generics[getDaySeed(note.id) % generics.length];
-  }
 
-  function extractVitals(hints, features) {
-    // Look for vital signs in the text — generate realistic ranges, not static values
-    var vitals = [];
-    var text = features + ' ' + (hints.signs || []).join(' ');
-    var seed = getDaySeed('vitals');
-
-    // Helper: pick a value in a range using daily seed
-    function ranged(min, max, offset) {
-      return min + ((seed + (offset || 0)) % (max - min + 1));
-    }
-
-    if (/bp\s*[<>]|sbp\s*[<>]|hypotens/i.test(text)) {
-      vitals.push('BP ' + ranged(72, 94, 1) + '/' + ranged(38, 56, 2));
-    } else if (/hypertens/i.test(text)) {
-      vitals.push('BP ' + ranged(178, 218, 1) + '/' + ranged(98, 122, 2));
-    } else {
-      // Normal-ish baseline
-      vitals.push('BP ' + ranged(118, 148, 1) + '/' + ranged(68, 88, 2));
-    }
-
-    if (/tachycard|hr\s*>/i.test(text)) {
-      vitals.push('HR ' + ranged(108, 138, 3));
-    } else {
-      vitals.push('HR ' + ranged(72, 96, 3));
-    }
-
-    if (/tachypn|rr\s*>/i.test(text)) {
-      vitals.push('RR ' + ranged(24, 34, 4));
-    } else {
-      vitals.push('RR ' + ranged(14, 20, 4));
-    }
-
-    if (/fever|temp\s*>/i.test(text)) {
-      var t = 38.2 + ((seed + 5) % 20) / 10; // 38.2 – 40.1
-      vitals.push('T ' + t.toFixed(1) + 'C');
-    } else if (/hypotherm|temp\s*</i.test(text)) {
-      var t = 33.0 + ((seed + 5) % 25) / 10; // 33.0 – 35.4
-      vitals.push('T ' + t.toFixed(1) + 'C');
-    } else {
-      var t = 36.4 + ((seed + 5) % 12) / 10; // 36.4 – 37.5
-      vitals.push('T ' + t.toFixed(1) + 'C');
-    }
-
-    if (/spo2|hypox|desat/i.test(text)) {
-      vitals.push('SpO2 ' + ranged(82, 92, 6) + '% on RA');
-    } else {
-      vitals.push('SpO2 ' + ranged(95, 99, 6) + '% on RA');
-    }
-
-    return 'Vitals: ' + vitals.join(', ') + '.';
-  }
-
-  function renderPresentation(note, card, actions) {
-    var vignette = buildVignette(note);
-    card.innerHTML =
-      '<div class="scenario-label">Patient Presentation</div>' +
-      '<div class="vignette">' + escapeHtml(vignette) + '</div>' +
-      '<div class="scenario-prompt">Take a moment to consider this presentation.</div>' +
-      '<p class="scenario-body">What conditions are you considering? What\'s your primary survey, and what are you watching for?</p>';
-    actions.innerHTML = '<button class="btn-primary" onclick="CKB.nextStep()">Show me the differential</button>' +
-      renderStepNav(false, false);
-  }
-
-  function buildDifferential(note) {
-    // Build a realistic differential: correct dx + 2-3 plausible alternatives
-    if (session.differential) return session.differential;
-
-    var correctId = session.conditionId;
-    var candidates = [];
-
-    // 1. Same system conditions
-    if (note.system) {
-      var conditionIds = DB.categories['Conditions'] || [];
-      conditionIds.forEach(function (id) {
-        if (id !== correctId && DB.notes[id] && DB.notes[id].system === note.system) {
-          candidates.push(id);
-        }
-      });
-    }
-
-    // 2. Related conditions from the graph
-    var related = (DB.graph[correctId] || []).filter(function (id) {
-      return DB.notes[id] && DB.notes[id].category === 'Conditions' && id !== correctId;
-    });
-    related.forEach(function (id) {
-      if (candidates.indexOf(id) === -1) candidates.push(id);
+    var gridHtml = '';
+    modes.forEach(function (m, idx) {
+      var trioClass = m.trio ? ' home-card-trio' : '';
+      var done = progress[todaySelections[m.key + 'Id']];
+      var doneToday = done && done.lastSeen === todayStr();
+      var checkmark = doneToday ? '<span class="home-card-check">&#10003;</span>' : '';
+      gridHtml += '<button class="home-card' + trioClass + (doneToday ? ' home-card-done' : '') + '" onclick="CKB.startMode(\'' + m.key + '\')">' +
+        checkmark +
+        '<div class="home-card-icon" style="color:' + m.color + '">' + m.icon + '</div>' +
+        '<div class="home-card-label">' + m.label + '</div>' +
+        '<div class="home-card-sub">' + escapeHtml(m.sub) + '</div>' +
+        '</button>';
     });
 
-    // 3. If still not enough, pull random conditions
-    if (candidates.length < 2) {
-      var allConditions = (DB.categories['Conditions'] || []).filter(function (id) {
-        return id !== correctId && candidates.indexOf(id) === -1;
-      });
-      var shuffled = seededShuffle(allConditions, getDaySeed('diff-' + correctId));
-      candidates = candidates.concat(shuffled.slice(0, 5));
-    }
-
-    // Pick 2-3 distractors using daily seed (stable all day)
-    var shuffledCandidates = seededShuffle(candidates, getDaySeed('differential'));
-    var distractors = shuffledCandidates.slice(0, 3).map(function (id) {
-      return { id: id, title: DB.notes[id].title };
-    });
-
-    // Build shuffled list with correct answer mixed in
-    var all = distractors.concat([{ id: correctId, title: note.title, correct: true }]);
-    var shuffledAll = seededShuffle(all, getDaySeed('diff-order'));
-
-    session.differential = { items: shuffledAll, correctId: correctId };
-    return session.differential;
+    document.getElementById('home-grid').innerHTML = gridHtml;
   }
 
-  function renderDifferential(note, card, actions) {
-    var revealed = session.scenarioRevealed.differential;
-    var diff = buildDifferential(note);
+  // ==================== PRESENTATION MODE ====================
+  function renderPresentation() {
+    var item = getStudyItem(STUDY.presentations, todaySelections.presentationId);
+    if (!item) { document.getElementById('presentation-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No presentations authored yet.</p>'; return; }
 
-    var listHtml = '';
-    if (revealed) {
-      diff.items.forEach(function (item) {
-        var isCorrect = item.id === diff.correctId;
-        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:2px solid ' +
-          (isCorrect ? 'var(--green)' : 'var(--border)') + ';background:' +
-          (isCorrect ? 'rgba(34,197,94,0.08)' : 'transparent') + ';cursor:pointer" ' +
-          'onclick="CKB.openNote(\'' + item.id + '\')">' +
-          '<strong style="' + (isCorrect ? 'color:var(--green)' : '') + '">' +
-          (isCorrect ? '✓ ' : '✗ ') + escapeHtml(item.title) + '</strong>' +
+    var html = '<div class="mode-header presentation">' +
+      '<div class="mode-label">PRESENTATION</div>' +
+      '<div class="mode-title">' + escapeHtml(item.chiefComplaint) + '</div>' +
+      '</div>';
+
+    html += '<div class="arrival-card">' +
+      '<div class="arrival-label">ARRIVAL</div>' +
+      '<div class="arrival-text">' + escapeHtml(item.arrival) + '</div>' +
+      '</div>';
+
+    html += '<div class="diff-label">DIFFERENTIAL</div>';
+
+    item.differentials.forEach(function (diff, idx) {
+      var expanded = document.querySelector('[data-diff="' + idx + '"].diff-expanded');
+      html += '<div class="diff-card" data-diff="' + idx + '">' +
+        '<button class="diff-header" onclick="CKB.toggleDiff(' + idx + ')">' +
+        '<span class="diff-name">' + escapeHtml(diff.diagnosis) + '</span>' +
+        '<span class="diff-arrow" id="diff-arrow-' + idx + '">&#9654;</span>' +
+        '</button>' +
+        '<div class="diff-body" id="diff-body-' + idx + '" style="display:none">';
+
+      html += '<div class="diff-section"><div class="diff-section-label">DISTINGUISHING FEATURES</div>' +
+        '<p class="diff-text">' + escapeHtml(diff.distinguishing) + '</p></div>';
+
+      html += '<div class="diff-section"><div class="diff-section-label">DIAGNOSTICS</div>';
+      diff.diagnostics.forEach(function (dx) {
+        html += '<div class="dx-row">' +
+          '<div class="dx-test">' + escapeHtml(dx.test) + '</div>' +
+          '<div class="dx-looking">' + escapeHtml(dx.lookingFor) + '</div>' +
+          (dx.noteId && DB.notes[dx.noteId] ? '<button class="note-link-chip" onclick="CKB.openNote(\'' + dx.noteId + '\')">' + escapeHtml(DB.notes[dx.noteId].title) + '</button>' : '') +
           '</div>';
       });
-      // Show definition of the correct answer
-      var defContent = findSection(note, 'definition');
-      var defKey = findSectionKey(note, 'definition');
-      listHtml += defContent
-        ? '<div style="margin-top:12px">' + summarizeSection(defContent, 5, session.conditionId, defKey) + '</div>'
-        : '';
-    } else {
-      diff.items.forEach(function (item, i) {
-        listHtml += '<div style="padding:10px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--border)">' +
-          (i + 1) + '. ' + escapeHtml(item.title) + '</div>';
-      });
-    }
+      html += '</div>';
 
-    card.innerHTML =
-      '<div class="scenario-label">Differential</div>' +
-      '<div class="scenario-prompt">What\'s on your differential?</div>' +
-      '<p class="scenario-body">' + (revealed
-        ? 'Here\'s the answer — tap any condition to explore it.'
-        : 'Review the options below. Which condition best fits this presentation? Tap to reveal the answer.') + '</p>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'differential\')">' +
-        listHtml
-      + '</div>';
-    actions.innerHTML = (revealed
-      ? renderRatingAndNext('differential')
-      : '') + renderStepNav(true, revealed);
-  }
-
-  // Extract the "First principles:" bridge from pathophysiology text
-  function extractFirstPrinciplesBridge(text) {
-    if (!text) return null;
-    // Match the italic first-principles line: *First principles: ... *
-    var match = text.match(/\*First principles:?\s*([\s\S]+?)\*/);
-    if (match) {
-      return match[1].trim();
-    }
-    return null;
-  }
-
-  // Get the pathophysiology content WITHOUT the first-principles bridge line
-  function getPathoBody(text) {
-    if (!text) return text;
-    // Remove the first-principles italic line
-    return text.replace(/>\s*\*First principles:?[\s\S]+?\*\s*\n*/i, '')
-               .replace(/\*First principles:?[\s\S]+?\*\s*\n*/i, '')
-               .trim();
-  }
-
-  function renderPathophys(note, card, actions) {
-    var revealed = session.scenarioRevealed.pathophysiology;
-    var fullContent = findSection(note, 'pathophysiology') || findSection(note, 'mechanism') || 'No pathophysiology section available for this note.';
-    var sKey = findSectionKey(note, 'pathophysiology') || findSectionKey(note, 'mechanism');
-
-    var revealHtml = '';
-    if (revealed) {
-      // Show the first-principles bridge prominently
-      var bridge = extractFirstPrinciplesBridge(fullContent);
-      if (bridge) {
-        // Parse out concept names from the bridge (they appear before the em-dash)
-        revealHtml += '<div style="padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border);margin-bottom:14px">' +
-          '<strong style="font-size:13px;color:var(--accent)">THE BIG PICTURE:</strong>' +
-          '<div style="margin-top:6px;font-size:15px;line-height:1.6">' + formatSection(bridge) + '</div>' +
+      html += '<div class="diff-section"><div class="diff-section-label">TREATMENTS</div>';
+      diff.treatments.forEach(function (tx) {
+        var name = tx.med || tx.intervention;
+        html += '<div class="tx-row">' +
+          '<div class="tx-name">' + escapeHtml(name) + '</div>' +
+          '<div class="tx-why">' + escapeHtml(tx.why) + '</div>' +
+          (tx.noteId && DB.notes[tx.noteId] ? '<button class="note-link-chip" onclick="CKB.openNote(\'' + tx.noteId + '\')">' + escapeHtml(DB.notes[tx.noteId].title) + '</button>' : '') +
           '</div>';
-      }
-      // Then show a shorter summary of the detailed pathophysiology
-      var pathoBody = getPathoBody(fullContent);
-      if (pathoBody) {
-        revealHtml += summarizeSection(pathoBody, 6, session.conditionId, sKey);
-      }
-    }
-
-    card.innerHTML =
-      '<div class="scenario-label">Pathophysiology</div>' +
-      '<div class="scenario-prompt">Walk through the pathophysiology. Why is this happening?</div>' +
-      '<p class="scenario-body">Trace it from the underlying mechanism to the signs and symptoms you\'re seeing at the bedside.</p>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'pathophysiology\')">' +
-        (revealed ? revealHtml : 'Tap to reveal the pathophysiology')
-      + '</div>';
-    actions.innerHTML = (revealed ? renderRatingAndNext('pathophysiology') : '') + renderStepNav(true, revealed);
-  }
-
-  function renderDiagnostics(note, card, actions) {
-    var revealed = session.scenarioRevealed.diagnostics;
-    var content = findSection(note, 'diagnosis') || 'No diagnostics section available for this note.';
-    var sKey = findSectionKey(note, 'diagnosis');
-    card.innerHTML =
-      '<div class="scenario-label">Diagnostics</div>' +
-      '<div class="scenario-prompt">What diagnostics do you anticipate?</div>' +
-      '<p class="scenario-body">Think labs, imaging, and bedside assessments the provider will likely order. What would you prioritize drawing first? What\'s time-critical?</p>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'diagnostics\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal diagnostics')
-      + '</div>';
-    actions.innerHTML = (revealed ? renderRatingAndNext('diagnostics') : '') + renderStepNav(true, revealed);
-  }
-
-  // Extract the most ED-relevant portion of a management section.
-  // Many notes bury acute management after screening/surveillance subsections.
-  function extractAcuteManagement(text) {
-    if (!text) return text;
-    // Look for acute/emergency subsection headers
-    var acutePatterns = [
-      /^###?\s*(acute|emergency|ed |ruptured|immediate|initial|resuscitation|stabilization|critical)/im,
-      /^###?\s*(pharmacotherapy|treatment|intervention)/im
-    ];
-    for (var i = 0; i < acutePatterns.length; i++) {
-      var match = acutePatterns[i].exec(text);
-      if (match && match.index > 100) {
-        // Found an acute section buried in the content — start from there
-        return text.substring(match.index);
-      }
-    }
-    return text;
-  }
-
-  function renderManagement(note, card, actions) {
-    var revealed = session.scenarioRevealed.management;
-    var rawContent = findSection(note, 'management') || '';
-    var content = extractAcuteManagement(rawContent);
-    var sKey = findSectionKey(note, 'management');
-    // Add linked pharmacology notes
-    var pharmLinks = (DB.graph[session.conditionId] || []).filter(function (id) {
-      return DB.notes[id] && DB.notes[id].category === 'Pharmacology';
-    });
-    var pharmHtml = '';
-    if (pharmLinks.length > 0 && revealed) {
-      pharmHtml = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">' +
-        '<strong style="font-size:13px;color:var(--green)">RELATED PHARMACOLOGY:</strong><br>';
-      pharmLinks.slice(0, 5).forEach(function (pid) {
-        var pn = DB.notes[pid];
-        pharmHtml += '<span class="note-link-chip" onclick="CKB.openNote(\'' + pid + '\')">' + escapeHtml(pn.title) + '</span> ';
       });
-      pharmHtml += '</div>';
-    }
-    card.innerHTML =
-      '<div class="scenario-label">Management & Pharmacology</div>' +
-      '<div class="scenario-prompt">What interventions do you anticipate?</div>' +
-      '<p class="scenario-body">Think nursing interventions, medications you\'ll be administering, drips to prepare, and what to have at bedside. What are the priorities?</p>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'management\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) + pharmHtml : 'Tap to reveal management plan')
-      + '</div>';
-    actions.innerHTML = (revealed ? renderRatingAndNext('management') : '') + renderStepNav(true, revealed);
-  }
+      html += '</div>';
 
-  function renderNursing(note, card, actions) {
-    var revealed = session.scenarioRevealed.nursing;
-    var content = findSection(note, 'nursingConsiderations') || 'No nursing considerations section available.';
-    var sKey = findSectionKey(note, 'nursingConsiderations');
-    card.innerHTML =
-      '<div class="scenario-label">Nursing Priorities</div>' +
-      '<div class="scenario-prompt">What are your nursing priorities?</div>' +
-      '<p class="scenario-body">Think monitoring parameters, assessment frequency, meds you\'re pushing or hanging, patient safety, and when to escalate to the provider.</p>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.reveal(\'nursing\')">' +
-        (revealed ? summarizeSection(content, 8, session.conditionId, sKey) : 'Tap to reveal nursing priorities')
-      + '</div>';
-    actions.innerHTML = (revealed ? renderRatingAndNext('nursing') : '') + renderStepNav(true, revealed);
-  }
-
-  function renderScenarioPearls(note, card, actions) {
-    var pearls = note.clinicalPearls || [];
-    // If this note has no pearls, pull from related notes
-    if (pearls.length === 0) {
-      var related = DB.graph[session.conditionId] || [];
-      for (var r = 0; r < related.length && pearls.length < 4; r++) {
-        var rNote = DB.notes[related[r]];
-        if (rNote && rNote.clinicalPearls) {
-          rNote.clinicalPearls.slice(0, 2).forEach(function (p) {
-            pearls.push(p);
-          });
-        }
+      if (diff.conditionId && DB.notes[diff.conditionId]) {
+        html += '<button class="note-link-chip" style="margin-top:8px" onclick="CKB.openNote(\'' + diff.conditionId + '\')">Full note: ' + escapeHtml(DB.notes[diff.conditionId].title) + ' &rarr;</button>';
       }
-    }
-    var html = '<div class="scenario-label">Clinical Pearls</div>' +
-      '<div class="scenario-prompt">' + escapeHtml(note.title) + '</div>';
-    if (pearls.length > 0) {
-      var showPearls = pearls.slice(0, 4);
-      showPearls.forEach(function (p) {
+
+      html += '</div></div>';
+    });
+
+    html += renderModeRating('presentation', todaySelections.presentationId);
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('presentation-content').innerHTML = html;
+    showView('presentation');
+  }
+
+  // ==================== CONDITION MODE ====================
+  function renderCondition() {
+    var item = getStudyItem(STUDY.conditions, todaySelections.conditionId);
+    if (!item) { document.getElementById('condition-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No conditions authored yet.</p>'; return; }
+
+    var sections = [
+      { key: 'overview', label: 'Overview' },
+      { key: 'pathophysiology', label: 'Pathophysiology' },
+      { key: 'keyFeatures', label: 'Key Features' },
+      { key: 'management', label: 'Management' },
+      { key: 'nursingPriorities', label: 'Nursing Priorities' }
+    ];
+
+    var html = '<div class="mode-header condition">' +
+      '<div class="mode-label">CONDITION</div>' +
+      '<div class="mode-title">' + escapeHtml(item.title) + '</div>' +
+      '</div>';
+
+    sections.forEach(function (sec) {
+      if (!item[sec.key]) return;
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>' + sec.label + '</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">' + formatSection(item[sec.key]) + '</div></div>';
+    });
+
+    if (item.pearls && item.pearls.length > 0) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>Clinical Pearls</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">';
+      item.pearls.forEach(function (p) {
         html += '<div class="note-pearl">' + formatSection(p) + '</div>';
-      });
-      if (note.clinicalPearls && note.clinicalPearls.length > 4) {
-        html += '<p style="font-size:13px;color:var(--text-muted);margin-top:8px">+ ' + (note.clinicalPearls.length - 4) + ' more pearls in full note</p>';
-      }
-    } else {
-      html += '<p class="scenario-body" style="color:var(--text-muted)">No clinical pearls for this note yet.</p>';
-    }
-
-    // Show related notes
-    var related = DB.graph[session.conditionId] || [];
-    if (related.length > 0) {
-      html += '<div style="margin-top:16px"><strong style="font-size:13px;color:var(--text-muted)">EXPLORE RELATED:</strong><div class="note-links">';
-      related.slice(0, 8).forEach(function (rid) {
-        if (DB.notes[rid]) {
-          html += '<button class="note-link-chip" onclick="CKB.openNote(\'' + rid + '\')">' + escapeHtml(DB.notes[rid].title) + '</button>';
-        }
       });
       html += '</div></div>';
     }
-    card.innerHTML = html;
 
-    // Overall confidence rating
-    actions.innerHTML =
-      '<p style="text-align:center;font-size:14px;color:var(--text-muted);margin-bottom:8px">How confident do you feel about <strong>' + escapeHtml(note.title) + '</strong>?</p>' +
-      '<div class="rating-row">' +
-        '<button class="rating-btn green" onclick="CKB.rateScenario(\'solid\')">Solid</button>' +
-        '<button class="rating-btn amber" onclick="CKB.rateScenario(\'needs-review\')">Needs Review</button>' +
-        '<button class="rating-btn red" onclick="CKB.rateScenario(\'study-more\')">Study More</button>' +
-      '</div>' + renderStepNav(true, false);
-  }
-
-  function renderRatingAndNext(stepKey) {
-    return '<div class="rating-row">' +
-      '<button class="rating-btn green" onclick="CKB.rateStep(\'' + stepKey + '\',\'solid\')">Got it</button>' +
-      '<button class="rating-btn amber" onclick="CKB.rateStep(\'' + stepKey + '\',\'partial\')">Partially</button>' +
-      '<button class="rating-btn red" onclick="CKB.rateStep(\'' + stepKey + '\',\'missed\')">Missed it</button>' +
-    '</div>';
-  }
-
-  function summarizeSection(text, maxLines, noteId, sectionKey) {
-    if (!text) return '<em style="color:var(--text-muted)">No content available.</em>';
-    var lines = text.split('\n');
-    var kept = [];
-    var count = 0;
-    var charCount = 0;
-    var maxChars = 500;
-    for (var i = 0; i < lines.length && count < maxLines; i++) {
-      var line = lines[i].trim();
-      if (line === '' && kept.length === 0) continue;
-      if (line === '' && count > 0) { kept.push(''); continue; }
-      if (line.startsWith('|') && line.indexOf('---') !== -1) continue;
-      if (charCount + line.length > maxChars && charCount > 0) break;
-      kept.push(lines[i]);
-      charCount += line.length;
-      if (charCount >= maxChars) break;
-      count++;
+    if (DB.notes[item.id]) {
+      html += '<button class="note-link-chip" style="margin-top:12px" onclick="CKB.openNote(\'' + item.id + '\')">Full vault note &rarr;</button>';
     }
-    var summary = kept.join('\n').trim();
-    if (summary.length > maxChars) {
-      var cut = summary.lastIndexOf(' ', maxChars);
-      if (cut < maxChars * 0.5) cut = maxChars;
-      summary = summary.substring(0, cut) + '…';
-    }
-    var html = formatSection(summary);
-    var truncated = text.length > summary.length + 20;
-    if (truncated) {
-      var onclick = sectionKey
-        ? "CKB.openNote('" + noteId + "','" + sectionKey + "')"
-        : "CKB.openNote('" + noteId + "')";
-      html += '<br><button class="note-link-chip" style="margin-top:8px;font-size:13px" onclick="' + onclick + '">Read more &rarr;</button>';
-    }
-    return html;
+
+    html += renderModeRating('condition', item.id);
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('condition-content').innerHTML = html;
+    showView('condition');
   }
 
-  function renderStepNav(showBack, showForward) {
-    var html = '<div class="step-nav">';
-    if (showBack) {
-      html += '<button class="step-nav-btn" onclick="CKB.prevStep()">&larr; Back</button>';
-    } else {
-      html += '<span class="step-nav-spacer"></span>';
+  // ==================== A&P MODE ====================
+  function renderAnatomy() {
+    var item = getStudyItem(STUDY.anatomy, todaySelections.anatomyId);
+    if (!item) { document.getElementById('anatomy-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No A&P entries authored yet.</p>'; return; }
+
+    var condition = getStudyItem(STUDY.conditions, todaySelections.conditionId);
+
+    var sections = [
+      { key: 'keyStructures', label: 'Key Structures' },
+      { key: 'normalPhysiology', label: 'Normal Physiology' },
+      { key: 'clinicalAssessment', label: 'Clinical Assessment' },
+      { key: 'labValues', label: 'Lab Values' },
+      { key: 'clinicalConnection', label: condition ? 'Connection: ' + condition.title : 'Clinical Connection' }
+    ];
+
+    var html = '<div class="mode-header anatomy">' +
+      '<div class="mode-label">A&P</div>' +
+      '<div class="mode-title">' + escapeHtml(item.title) + '</div>' +
+      (condition ? '<div class="mode-subtitle">Linked to today\'s condition: ' + escapeHtml(condition.title) + '</div>' : '') +
+      '</div>';
+
+    sections.forEach(function (sec) {
+      if (!item[sec.key]) return;
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>' + sec.label + '</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">' + formatSection(item[sec.key]) + '</div></div>';
+    });
+
+    if (DB.notes[item.id]) {
+      html += '<button class="note-link-chip" style="margin-top:12px" onclick="CKB.openNote(\'' + item.id + '\')">Full vault note &rarr;</button>';
     }
-    if (showForward) {
-      html += '<button class="step-nav-btn" onclick="CKB.nextStep()">Skip &rarr;</button>';
-    } else {
-      html += '<span class="step-nav-spacer"></span>';
+
+    html += renderModeRating('anatomy', item.id);
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('anatomy-content').innerHTML = html;
+    showView('anatomy');
+  }
+
+  // ==================== MED CLASS MODE ====================
+  function renderMedClass() {
+    var item = getStudyItem(STUDY.medications, todaySelections.medclassId);
+    if (!item) { document.getElementById('medclass-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No med classes authored yet.</p>'; return; }
+
+    var condition = getStudyItem(STUDY.conditions, todaySelections.conditionId);
+
+    var html = '<div class="mode-header medclass">' +
+      '<div class="mode-label">MED CLASS</div>' +
+      '<div class="mode-title">' + escapeHtml(item.title) + '</div>' +
+      (condition ? '<div class="mode-subtitle">Linked to today\'s condition: ' + escapeHtml(condition.title) + '</div>' : '') +
+      '</div>';
+
+    // MOA
+    html += '<div class="reveal-section">' +
+      '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+      '<span>Mechanism of Action</span><span class="reveal-arrow">&#9654;</span></button>' +
+      '<div class="reveal-body" style="display:none">' + formatSection(item.moa) + '</div></div>';
+
+    // FDA Uses
+    if (item.fdaUses && item.fdaUses.length > 0) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>FDA-Approved Uses</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none"><ul class="md-ul">';
+      item.fdaUses.forEach(function (u) { html += '<li>' + escapeHtml(u) + '</li>'; });
+      html += '</ul></div></div>';
     }
-    html += '</div>';
-    return html;
-  }
 
-  // ==================== PHARM FLASH ====================
-  function renderPharmFlash() {
-    var note = DB.notes[session.pharmId];
-    if (!note) { goToConceptCheck(); return; }
+    // Non-FDA Uses
+    if (item.nonFdaUses && item.nonFdaUses.length > 0) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>Off-Label / Non-FDA Uses</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none"><ul class="md-ul">';
+      item.nonFdaUses.forEach(function (u) { html += '<li>' + escapeHtml(u) + '</li>'; });
+      html += '</ul></div></div>';
+    }
 
-    var card = document.getElementById('pharm-card');
-    var actions = document.getElementById('pharm-actions');
-    var revealed = session.pharmRevealed;
-
-    card.innerHTML =
-      '<div class="flash-category pharm">Pharmacology</div>' +
-      '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
-      (note.drugClass ? '<p style="color:var(--text-muted);font-size:14px;margin-bottom:12px">' + escapeHtml(note.drugClass) + '</p>' : '') +
-      '<div class="flash-question">Can you recall the mechanism of action, key drugs, and primary indications?</div>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPharm()">' +
-        (revealed
-          ? (function() {
-              var mechContent = findSection(note, 'mechanism');
-              var indContent = findSection(note, 'indications');
-              var drugContent = findSection(note, 'keyDrugs') || findSection(note, 'key-agents') || findSection(note, 'key-drug');
-              return (mechContent ? '<strong>Mechanism:</strong><br>' + summarizeSection(mechContent, 8, session.pharmId, findSectionKey(note, 'mechanism')) + '<br><br>' : '') +
-                (indContent ? '<strong>Indications:</strong><br>' + summarizeSection(indContent, 8, session.pharmId, findSectionKey(note, 'indications')) + '<br><br>' : '') +
-                (drugContent ? '<strong>Key Drugs:</strong><br>' + summarizeSection(drugContent, 10, session.pharmId, findSectionKey(note, 'keyDrugs') || findSectionKey(note, 'key-agents') || findSectionKey(note, 'key-drug')) : '');
-            })()
-          : 'Tap to reveal')
-      + '</div>';
-
-    actions.innerHTML = (revealed
-      ? '<div class="rating-row">' +
-          '<button class="rating-btn green" onclick="CKB.ratePharm(\'solid\')">Solid</button>' +
-          '<button class="rating-btn amber" onclick="CKB.ratePharm(\'needs-review\')">Needs Review</button>' +
-          '<button class="rating-btn red" onclick="CKB.ratePharm(\'study-more\')">Study More</button>' +
-        '</div>'
-      : '') +
-      '<div class="step-nav"><button class="step-nav-btn" onclick="CKB.backToScenario()">&larr; Back to Case</button><span class="step-nav-spacer"></span></div>';
-
-    showView('pharm');
-  }
-
-  // ==================== CONCEPT CHECK ====================
-  function goToConceptCheck() {
-    var note = DB.notes[session.conceptId];
-    if (!note) { goToPearls(); return; }
-
-    var card = document.getElementById('concept-card');
-    var actions = document.getElementById('concept-actions');
-    session.conceptRevealed = false;
-
-    renderConceptCard(note, card, actions);
-    showView('concept');
-  }
-
-  // Plain-language concept summaries — written for the bedside, not the textbook.
-  var CONCEPT_SUMMARIES = {
-    'acid-base-balance': 'Your body keeps blood pH in a tiny range (7.35-7.45). When something throws it off — sepsis, DKA, kidney failure, overdose — the lungs and kidneys try to compensate. Read the ABG to figure out what broke and whether the body is keeping up.',
-    'cell-proliferation-and-death': 'Cells are constantly dividing and dying in a controlled balance. When cells die that shouldn\'t (infarction, necrosis), you see tissue damage. When cells won\'t die (cancer), you see tumors. Troponin rising? That\'s cardiac cells dying and leaking their contents.',
-    'cell-signaling-and-receptor-biology': 'Drugs work by talking to receptors on cells — turning them on (agonists) or blocking them (antagonists). Understanding receptor types (alpha, beta, muscarinic, etc.) tells you why a drug does what it does AND why it causes the side effects it does.',
-    'coagulation-and-hemostasis': 'Your blood has a system to stop bleeding (clotting) and a system to prevent too much clotting (fibrinolysis). Most of the blood thinners, clotting emergencies, and lab values you deal with come down to where in this balance something went wrong.',
-    'electricity-and-excitability': 'Cells run on electricity — ions flowing in and out across membranes. The heart\'s rhythm, nerve signals, and muscle contractions are all electrical events. Electrolyte imbalances (K+, Ca2+, Mg2+) cause problems because they change how this electricity works.',
-    'enzymes-and-biological-catalysis': 'Enzymes speed up chemical reactions in the body. The liver\'s CYP450 enzymes metabolize most drugs — which is why drug interactions matter so much. When you see "inducer" or "inhibitor," it means a drug is speeding up or slowing down another drug\'s breakdown.',
-    'epidemiology-basics': 'Epidemiology is about patterns of disease in populations — who gets sick, how often, and why. It\'s the foundation for understanding risk factors, screening decisions, and why we treat certain populations differently.',
-    'fluid-and-electrolyte-balance': 'Your body is ~60% water split across compartments. Sodium determines where water goes (water follows sodium). Most of the fluids you hang, the electrolytes you replace, and the edema you see come down to shifts between these compartments.',
-    'genetics-and-protein-expression': 'DNA makes RNA makes protein — that\'s the central dogma. Genetic mutations cause diseases like sickle cell. Pharmacogenomics explains why some patients metabolize drugs differently. Biologics are drugs made by engineering this genetic machinery.',
-    'health-assessment-foundations': 'Systematic assessment is how you catch what\'s changing before it becomes a crisis. Head-to-toe, focused assessments, and knowing what\'s normal for YOUR patient so you recognize when something shifts.',
-    'hemodynamics': 'Blood pressure = cardiac output x vascular resistance. This one equation explains hypertension, shock, heart failure, and why every vasopressor and fluid bolus works the way it does. Change one variable, the others respond.',
-    'homeostasis-and-feedback-loops': 'The body constantly adjusts to stay in balance — temperature, blood sugar, blood pressure, pH. Negative feedback loops keep things stable. When the system can\'t compensate anymore (decompensation), that\'s when patients crash.',
-    'infection-and-infectious-disease': 'Pathogens (bacteria, viruses, fungi) cause disease when they overwhelm the body\'s defenses. The type of organism determines which antibiotic works, how it spreads, and what precautions you need. Culture before you treat when you can.',
-    'inflammation-and-immune-response': 'Inflammation is the body\'s alarm system — redness, heat, swelling, pain. It\'s how the immune system fights infection and heals injuries. But when inflammation goes unchecked (sepsis, ARDS, autoimmune), the response itself becomes the threat.',
-    'nursing-process': 'Assess, diagnose, plan, implement, evaluate — and repeat. It sounds basic, but the nurses who catch deterioration early are the ones who never skip the reassessment step.',
-    'nutrition-and-metabolism': 'Metabolism is how the body converts food into energy. When oxygen is available, cells make energy efficiently (aerobic). Without oxygen, they switch to a backup mode that produces lactate. A rising lactate tells you tissues aren\'t getting what they need.',
-    'oxygen-delivery-and-consumption-do2vo2': 'DO2 = cardiac output x oxygen content. This is THE equation for critical care. Every intervention in shock — fluids, vasopressors, blood transfusion, intubation — is about improving one of those variables to get more oxygen to the tissues.',
-    'oxygenation-and-ventilation': 'Oxygenation is getting O2 into the blood (SpO2 problem). Ventilation is getting CO2 out (CO2/respiratory rate problem). They\'re different problems with different fixes. A patient can have normal SpO2 and still be ventilating terribly.',
-    'pain-physiology-and-management': 'Pain signals travel from the injury site through nerves to the brain. Different drugs block this signal at different points — local anesthetics at the nerve, opioids in the spinal cord and brain, NSAIDs at the injury site. Multimodal means hitting multiple points.',
-    'pharmacokinetics-and-pharmacodynamics': 'Pharmacokinetics = what the body does to the drug (absorb, distribute, metabolize, excrete). Pharmacodynamics = what the drug does to the body. Together they explain dosing, timing, drug levels, and why renal/hepatic patients need dose adjustments.',
-    'shock': 'Shock = not enough oxygen getting to tissues to meet demand. Four types (hypovolemic, cardiogenic, distributive, obstructive), each with a different fix. Recognize the type fast because the wrong treatment can make it worse.',
-    'wound-healing': 'Wounds heal in predictable phases: inflammation, proliferation, remodeling. Things that slow healing — poor perfusion, infection, diabetes, malnutrition — are the same things you\'re assessing and managing at the bedside every shift.'
-  };
-
-  function renderConceptCard(note, card, actions) {
-    var revealed = session.conceptRevealed;
-    var revealHtml = '';
-    if (revealed) {
-      // Show the plain-language summary
-      var summary = CONCEPT_SUMMARIES[session.conceptId];
-      if (summary) {
-        revealHtml = '<div style="font-size:15px;line-height:1.6;margin-bottom:14px">' + escapeHtml(summary) + '</div>';
-      } else {
-        // Fallback for any concept without a hand-written summary
-        var pearls = note.clinicalPearls || [];
-        if (pearls.length > 0) {
-          pearls.slice(0, 2).forEach(function (p) {
-            revealHtml += '<div class="note-pearl" style="margin-top:8px">' + formatSection(p) + '</div>';
-          });
-        }
-      }
-      // Connect to today's condition — use the First Principles bridge if available
-      var condNote = DB.notes[session.conditionId];
-      if (condNote) {
-        var condPatho = findSection(condNote, 'pathophysiology') || findSection(condNote, 'definition') || '';
-        // Prefer the First Principles bridge line (written to connect first principles to this condition)
-        var bridge = extractFirstPrinciplesBridge(condPatho);
-        if (!bridge || bridge.length < 20) {
-          // Fallback: first 2-3 sentences of pathophysiology
-          bridge = condPatho.split(/[.!]\s/).slice(0, 3).join('. ').trim();
-          if (bridge && !bridge.match(/[.!]$/)) bridge += '.';
-        }
-        if (bridge && bridge.length > 20) {
-          revealHtml += '<div style="margin-top:14px;padding:12px;border-radius:8px;background:var(--bg-card-alt, rgba(59,130,246,0.06));border:1px solid var(--border)">' +
-            '<strong style="font-size:13px;color:var(--accent)">IN TODAY\'S CASE (' + escapeHtml(condNote.title).toUpperCase() + '):</strong>' +
-            '<p style="margin-top:6px;font-size:14px;line-height:1.5">' + escapeHtml(bridge) + '</p>' +
-            '<button class="note-link-chip" style="margin-top:8px;font-size:12px" onclick="CKB.openNote(\'' + session.conditionId + '\',\'pathophysiology\')">See full pathophysiology &rarr;</button>' +
+    // ED Drugs
+    if (item.edDrugs && item.edDrugs.length > 0) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>ED Drugs You\'ll Use</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">';
+      item.edDrugs.forEach(function (drug) {
+        html += '<div class="drug-card">' +
+          '<div class="drug-name">' + escapeHtml(drug.name) + '</div>' +
+          '<div class="drug-dose">' + escapeHtml(drug.dose) + '</div>' +
+          '<div class="drug-why">' + escapeHtml(drug.why) + '</div>' +
           '</div>';
-        }
-      }
-      // Related notes to explore
-      var related = DB.graph[session.conceptId] || [];
-      var relOther = related.filter(function (id) { return id !== session.conditionId && DB.notes[id]; }).slice(0, 5);
-      if (relOther.length > 0) {
-        revealHtml += '<div style="margin-top:12px"><strong style="font-size:13px;color:var(--text-muted)">ALSO CONNECTED TO:</strong><div class="note-links" style="margin-top:6px">';
-        relOther.forEach(function (id) {
-          var n = DB.notes[id];
-          var chipStyle = n.category === 'Pharmacology' ? ' style="border-color:var(--green);color:var(--green)"' : '';
-          revealHtml += '<button class="note-link-chip"' + chipStyle + ' onclick="CKB.openNote(\'' + id + '\')">' + escapeHtml(n.title) + '</button>';
-        });
-        revealHtml += '</div></div>';
-      }
-      // Deep dive link
-      revealHtml += '<div style="margin-top:12px"><button class="note-link-chip" style="font-size:13px" onclick="CKB.openNote(\'' + session.conceptId + '\')">Deep dive into ' + escapeHtml(note.title) + ' &rarr;</button></div>';
+      });
+      html += '</div></div>';
     }
-    card.innerHTML =
-      '<div class="flash-category concept">First Principles</div>' +
-      '<div class="flash-title">' + escapeHtml(note.title) + '</div>' +
-      '<div class="flash-question">What do you know about this concept? How does it connect to what you see at the bedside?</div>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealConcept()">' +
-        (revealed ? revealHtml : 'Tap to reveal')
-      + '</div>';
 
-    actions.innerHTML = (revealed
-      ? '<div class="rating-row">' +
-          '<button class="rating-btn green" onclick="CKB.rateConcept(\'solid\')">Solid</button>' +
-          '<button class="rating-btn amber" onclick="CKB.rateConcept(\'needs-review\')">Needs Review</button>' +
-          '<button class="rating-btn red" onclick="CKB.rateConcept(\'study-more\')">Study More</button>' +
-        '</div>'
-      : '') +
-      '<div class="step-nav"><button class="step-nav-btn" onclick="CKB.backToPharm()">&larr; Back to Pharm</button><span class="step-nav-spacer"></span></div>';
-  }
-
-  // ==================== QUICK HITS (PEARLS) ====================
-  function goToPearls() {
-    session.pearlIndex = 0;
-    renderPearlCard();
-    showView('pearls');
-  }
-
-  function renderPearlCard() {
-    var pearls = session.pearls;
-    if (!pearls || session.pearlIndex >= pearls.length) {
-      finishSession();
-      return;
+    // Adverse Effects
+    if (item.adverseEffects) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>Adverse Effects</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">' + formatSection(item.adverseEffects) + '</div></div>';
     }
-    var p = pearls[session.pearlIndex];
-    var card = document.getElementById('pearl-card');
-    var actions = document.getElementById('pearl-actions');
-    var revealed = session['pearl_' + session.pearlIndex + '_revealed'];
 
-    card.innerHTML =
-      '<div class="flash-category pearl">Quick Hit ' + (session.pearlIndex + 1) + ' of ' + pearls.length + '</div>' +
-      '<div style="margin-bottom:16px">' +
-        '<div class="note-pearl">' + formatSection(p.pearl) + '</div>' +
-      '</div>' +
-      '<div class="reveal-zone ' + (revealed ? 'revealed' : '') + '" onclick="CKB.revealPearl()">' +
-        (revealed
-          ? '<strong>From:</strong> ' + escapeHtml(p.noteTitle) + ' <span style="color:var(--text-muted)">(' + p.category + ')</span>' +
-            '<br><button class="note-link-chip" style="margin-top:8px" onclick="CKB.openNote(\'' + p.noteId + '\')">' +
-            'Open full note</button>'
-          : 'Tap to see which note this is from')
-      + '</div>';
+    // Nursing Considerations
+    if (item.nursingConsiderations) {
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>Nursing Considerations</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">' + formatSection(item.nursingConsiderations) + '</div></div>';
+    }
 
-    var backLabel = session.pearlIndex === 0 ? '&larr; Back to Concept' : '&larr; Previous Pearl';
-    var backAction = session.pearlIndex === 0 ? 'CKB.backToConcept()' : 'CKB.prevPearl()';
-    actions.innerHTML = (revealed
-      ? '<button class="btn-primary" onclick="CKB.nextPearl()" style="margin-top:12px">' +
-          (session.pearlIndex < pearls.length - 1 ? 'Next Pearl' : 'Finish Session') + '</button>'
-      : '') +
-      '<div class="step-nav"><button class="step-nav-btn" onclick="' + backAction + '">' + backLabel + '</button><span class="step-nav-spacer"></span></div>';
+    if (DB.notes[item.id]) {
+      html += '<button class="note-link-chip" style="margin-top:12px" onclick="CKB.openNote(\'' + item.id + '\')">Full vault note &rarr;</button>';
+    }
+
+    html += renderModeRating('medclass', item.id);
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('medclass-content').innerHTML = html;
+    showView('medclass');
   }
 
-  // ==================== SESSION COMPLETE ====================
-  function finishSession() {
-    var streak = completeSessionStreak();
-    var card = document.getElementById('complete-card');
+  // ==================== PRINCIPLE MODE ====================
+  function renderPrinciple() {
+    var item = getStudyItem(STUDY.principles, todaySelections.principleId);
+    if (!item) { document.getElementById('principle-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No principles authored yet.</p>'; return; }
 
-    // Count today's ratings
-    var ratings = session.ratings || {};
-    var ratingCounts = { solid: 0, partial: 0, missed: 0, 'needs-review': 0, 'study-more': 0 };
-    Object.values(ratings).forEach(function (r) {
-      if (ratingCounts[r] !== undefined) ratingCounts[r]++;
+    var sections = [
+      { key: 'theCore', label: 'The Core Idea' },
+      { key: 'howItWorks', label: 'How It Works' },
+      { key: 'clinicalConnection', label: 'Clinical Connection' },
+      { key: 'atTheBedside', label: 'At the Bedside' }
+    ];
+
+    var html = '<div class="mode-header principle">' +
+      '<div class="mode-label">PRINCIPLE</div>' +
+      '<div class="mode-title">' + escapeHtml(item.title) + '</div>' +
+      '</div>';
+
+    sections.forEach(function (sec) {
+      if (!item[sec.key]) return;
+      html += '<div class="reveal-section">' +
+        '<button class="reveal-header" onclick="CKB.toggleReveal(this)">' +
+        '<span>' + sec.label + '</span><span class="reveal-arrow">&#9654;</span></button>' +
+        '<div class="reveal-body" style="display:none">' + formatSection(item[sec.key]) + '</div></div>';
     });
 
-    var condTitle = DB.notes[session.conditionId] ? DB.notes[session.conditionId].title : '—';
-    var pharmTitle = DB.notes[session.pharmId] ? DB.notes[session.pharmId].title : '—';
-    var conceptTitle = DB.notes[session.conceptId] ? DB.notes[session.conceptId].title : '—';
-
-    card.innerHTML =
-      '<div class="complete-icon">&#10003;</div>' +
-      '<div class="complete-title">Session Complete</div>' +
-      '<div class="complete-subtitle">Great work today!</div>' +
-      '<div class="complete-stats">' +
-        '<div class="stat-row"><span class="stat-label">Case</span><span class="stat-value">' + escapeHtml(condTitle) + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Pharm Flash</span><span class="stat-value">' + escapeHtml(pharmTitle) + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Concept Check</span><span class="stat-value">' + escapeHtml(conceptTitle) + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Quick Hits</span><span class="stat-value">' + session.pearls.length + ' pearls</span></div>' +
-      '</div>' +
-      '<div class="streak-display" style="margin-bottom:20px">' +
-        '<div class="streak-number">' + streak.count + '</div>' +
-        '<div class="streak-label">day streak</div>' +
-      '</div>' +
-      '<button class="btn-primary" onclick="CKB.showView(\'home\')">Done</button>';
-
-    showView('complete');
-  }
-
-  // ==================== HOME VIEW ====================
-  function renderHome() {
-    if (!DB) return;
-
-    document.getElementById('greeting').textContent = getDailyQuip();
-
-    // Session summary
-    var totalNotes = Object.keys(DB.notes).length;
-    var seenCount = Object.keys(progress).filter(function (id) { return progress[id].lastSeen; }).length;
-    var pct = Math.round((seenCount / totalNotes) * 100);
-    document.getElementById('session-summary').textContent =
-      'You\'ve studied ' + seenCount + ' of ' + totalNotes + ' notes (' + pct + '%)';
-
-    // Button
-    var btn = document.getElementById('btn-start-session');
-    btn.onclick = startSession;
-
-    // Stats
-    var streak = getStreak();
-    var confidenceCounts = { solid: 0, 'needs-review': 0, 'study-more': 0, unseen: 0 };
-    Object.keys(DB.notes).forEach(function (id) {
-      var p = progress[id];
-      if (!p || !p.confidence) confidenceCounts.unseen++;
-      else if (confidenceCounts[p.confidence] !== undefined) confidenceCounts[p.confidence]++;
-      else confidenceCounts.unseen++;
+    // Linked conditions and meds
+    var chips = [];
+    (item.linkedConditions || []).forEach(function (id) {
+      if (DB.notes[id]) chips.push({ id: id, title: DB.notes[id].title, color: '' });
     });
+    (item.linkedMeds || []).forEach(function (id) {
+      if (DB.notes[id]) chips.push({ id: id, title: DB.notes[id].title, color: 'style="border-color:var(--green);color:var(--green)"' });
+    });
+    if (chips.length > 0) {
+      html += '<div style="margin-top:16px"><div class="diff-section-label">CONNECTED NOTES</div><div class="note-links">';
+      chips.forEach(function (c) {
+        html += '<button class="note-link-chip" ' + c.color + ' onclick="CKB.openNote(\'' + c.id + '\')">' + escapeHtml(c.title) + '</button>';
+      });
+      html += '</div></div>';
+    }
 
-    document.getElementById('home-stats').innerHTML =
-      '<div class="card">' +
-        '<div class="stat-row"><span class="stat-label">Study streak</span><span class="stat-value">' + streak.count + ' days</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Solid</span><span class="stat-value" style="color:var(--green)">' + confidenceCounts.solid + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Needs review</span><span class="stat-value" style="color:var(--amber)">' + confidenceCounts['needs-review'] + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Study more</span><span class="stat-value" style="color:var(--red)">' + confidenceCounts['study-more'] + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Not yet seen</span><span class="stat-value">' + confidenceCounts.unseen + '</span></div>' +
-      '</div>';
+    if (DB.notes[item.id]) {
+      html += '<button class="note-link-chip" style="margin-top:12px" onclick="CKB.openNote(\'' + item.id + '\')">Full vault note &rarr;</button>';
+    }
+
+    html += renderModeRating('principle', item.id);
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('principle-content').innerHTML = html;
+    showView('principle');
   }
 
-  // ==================== PROGRESS DASHBOARD ====================
-  function renderDashboard() {
-    if (!DB) return;
-    var html = '<div class="dash-title">Your Progress</div>';
+  // ==================== CODE MODE ====================
+  function renderCode() {
+    var item = getStudyItem(STUDY.codes, todaySelections.codeId);
+    if (!item) { document.getElementById('code-content').innerHTML = '<p style="padding:20px;color:var(--text-muted)">No code scenarios authored yet.</p>'; return; }
 
-    // Streak
-    var streak = getStreak();
-    html += '<div class="dash-section">' +
-      '<div class="streak-display">' +
-        '<div class="streak-number">' + streak.count + '</div>' +
-        '<div class="streak-label">day study streak</div>' +
-      '</div></div>';
+    if (!codeState || codeState.id !== item.id) {
+      codeState = { id: item.id, step: 0, answers: [], revealed: false };
+    }
 
-    // Coverage by category
-    html += '<div class="dash-section"><div class="dash-section-title">Coverage by Category</div>';
-    ['Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures'].forEach(function (cat) {
-      var ids = DB.categories[cat] || [];
-      var seen = ids.filter(function (id) { return progress[id] && progress[id].lastSeen; }).length;
-      var pct = ids.length > 0 ? Math.round((seen / ids.length) * 100) : 0;
-      var color = pct > 70 ? 'green' : pct > 30 ? 'amber' : 'blue';
-      html += '<div class="progress-bar-container">' +
-        '<div class="progress-bar-label"><span>' + cat + '</span><span>' + seen + '/' + ids.length + '</span></div>' +
-        '<div class="progress-bar"><div class="progress-bar-fill ' + color + '" style="width:' + pct + '%"></div></div>' +
+    var html = '<div class="mode-header code">' +
+      '<div class="mode-label">CODE</div>' +
+      '<div class="mode-title">' + escapeHtml(item.title) + '</div>' +
       '</div>';
+
+    html += '<div class="code-scenario">' + escapeHtml(item.scenario) + '</div>';
+
+    // Progress dots
+    html += '<div class="scenario-progress">';
+    item.steps.forEach(function (s, i) {
+      var cls = i < codeState.step ? 'done' : (i === codeState.step ? 'current' : '');
+      html += '<div class="progress-dot ' + cls + '"></div>';
     });
     html += '</div>';
 
-    // Confidence distribution
-    var counts = { solid: 0, 'needs-review': 0, 'study-more': 0 };
-    Object.values(progress).forEach(function (p) {
-      if (p.confidence && counts[p.confidence] !== undefined) counts[p.confidence]++;
-    });
-    html += '<div class="dash-section"><div class="dash-section-title">Confidence Distribution</div>' +
-      '<div class="confidence-grid">' +
-        '<div class="confidence-box"><div class="confidence-number" style="color:var(--green)">' + counts.solid + '</div><div class="confidence-label">Solid</div></div>' +
-        '<div class="confidence-box"><div class="confidence-number" style="color:var(--amber)">' + counts['needs-review'] + '</div><div class="confidence-label">Review</div></div>' +
-        '<div class="confidence-box"><div class="confidence-number" style="color:var(--red)">' + counts['study-more'] + '</div><div class="confidence-label">Study More</div></div>' +
-      '</div></div>';
+    if (codeState.step >= item.steps.length) {
+      // Complete
+      var correct = codeState.answers.filter(function (a) { return a; }).length;
+      html += '<div class="code-complete">' +
+        '<div class="code-score">' + correct + '/' + item.steps.length + ' correct</div>' +
+        '<p style="color:var(--text-muted);margin-top:8px">' +
+        (correct === item.steps.length ? 'Perfect. You know this algorithm.' :
+         correct >= item.steps.length * 0.6 ? 'Solid foundation. Review the ones you missed.' :
+         'Keep drilling this one. The algorithm needs to be automatic.') + '</p>' +
+        '</div>';
+      html += renderModeRating('code', item.id);
+      html += '<button class="btn-secondary" style="margin-top:12px" onclick="CKB.resetCode()">Try Again</button>';
+    } else {
+      var step = item.steps[codeState.step];
+      html += '<div class="code-prompt">' + escapeHtml(step.prompt) + '</div>';
 
-    // Overdue notes (seen but not reviewed in 7+ days)
-    var overdue = [];
-    var now = Date.now();
-    Object.keys(progress).forEach(function (id) {
-      var p = progress[id];
-      if (p.lastSeen) {
-        var daysSince = Math.floor((now - new Date(p.lastSeen).getTime()) / 86400000);
-        if (daysSince >= 7 && DB.notes[id]) {
-          overdue.push({ id: id, title: DB.notes[id].title, days: daysSince, confidence: p.confidence });
+      step.options.forEach(function (opt, oi) {
+        var answered = codeState.revealed;
+        var selected = codeState.selectedOption === oi;
+        var cls = 'code-option';
+        if (answered) {
+          if (opt.correct) cls += ' code-correct';
+          else if (selected && !opt.correct) cls += ' code-wrong';
+          else cls += ' code-dim';
         }
-      }
-    });
-    overdue.sort(function (a, b) { return b.days - a.days; });
+        html += '<button class="' + cls + '" ' +
+          (answered ? '' : 'onclick="CKB.answerCode(' + oi + ')"') + '>' +
+          escapeHtml(opt.text) + '</button>';
 
-    if (overdue.length > 0) {
-      html += '<div class="dash-section"><div class="dash-section-title">Due for Review (' + overdue.length + ')</div>';
-      overdue.slice(0, 10).forEach(function (item) {
-        var color = item.confidence === 'study-more' ? 'var(--red)' :
-                    item.confidence === 'needs-review' ? 'var(--amber)' : 'var(--green)';
-        html += '<div class="browse-item" onclick="CKB.openNote(\'' + item.id + '\')">' +
-          '<div><div class="browse-item-title">' + escapeHtml(item.title) + '</div>' +
-          '<div class="browse-item-cat">' + item.days + ' days ago</div></div>' +
-          '<div class="browse-item-confidence" style="background:' + color + '"></div></div>';
+        if (answered && (selected || opt.correct)) {
+          html += '<div class="code-feedback ' + (opt.correct ? 'correct' : 'wrong') + '">' + escapeHtml(opt.feedback) + '</div>';
+        }
       });
-      html += '</div>';
+
+      if (codeState.revealed) {
+        html += '<button class="btn-primary" style="margin-top:16px" onclick="CKB.nextCodeStep()">Next &rarr;</button>';
+      }
     }
 
-    document.getElementById('dashboard').innerHTML = html;
+    html += '<div class="mode-nav"><button class="step-nav-btn" onclick="CKB.showView(\'home\')">&larr; Home</button></div>';
+
+    document.getElementById('code-content').innerHTML = html;
+    showView('code');
+  }
+
+  // ==================== SHARED: RATING ====================
+  function renderModeRating(mode, noteId) {
+    if (!noteId) return '';
+    var p = progress[noteId] || {};
+    if (p.lastSeen === todayStr() && p.confidence) {
+      return '<div class="rating-done">Rated: <strong>' + p.confidence.replace('-', ' ') + '</strong></div>';
+    }
+    return '<div class="rating-section">' +
+      '<p class="rating-prompt">How confident do you feel?</p>' +
+      '<div class="rating-row">' +
+      '<button class="rating-btn green" onclick="CKB.rate(\'' + mode + '\',\'' + noteId + '\',\'solid\')">Solid</button>' +
+      '<button class="rating-btn amber" onclick="CKB.rate(\'' + mode + '\',\'' + noteId + '\',\'needs-review\')">Review</button>' +
+      '<button class="rating-btn red" onclick="CKB.rate(\'' + mode + '\',\'' + noteId + '\',\'study-more\')">Study More</button>' +
+      '</div></div>';
+  }
+
+  // ==================== SEARCH INDEX ====================
+  function buildSearchIndex() {
+    Object.keys(DB.notes).forEach(function (id) {
+      var note = DB.notes[id];
+      var parts = [note.title.toLowerCase()];
+      if (note.aliases) note.aliases.forEach(function (a) { parts.push(a.toLowerCase()); });
+      Object.values(note.sections).forEach(function (s) { parts.push(s.toLowerCase()); });
+      if (note.clinicalPearls) note.clinicalPearls.forEach(function (p) { parts.push(p.toLowerCase()); });
+      searchIndex[id] = parts.join(' ');
+    });
   }
 
   // ==================== BROWSE VIEW ====================
   function renderBrowse() {
     if (!DB) return;
-
-    // Controls
     var controlsHtml = '<input type="text" class="browse-search" id="browse-search-input" placeholder="Search notes..." value="' + escapeHtml(browseSearch) + '">' +
       '<div class="browse-filters">';
-    ['All', 'Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures'].forEach(function (f) {
+    ['All', 'Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures', 'Diagnostics', 'Chief Complaints'].forEach(function (f) {
       controlsHtml += '<button class="filter-chip ' + (browseFilter === f ? 'active' : '') + '" onclick="CKB.setBrowseFilter(\'' + f + '\')">' + f + '</button>';
     });
     controlsHtml += '</div>';
     document.getElementById('browse-controls').innerHTML = controlsHtml;
 
-    // Add search listener
     setTimeout(function () {
       var input = document.getElementById('browse-search-input');
       if (input) {
-        input.oninput = function () {
-          browseSearch = input.value;
-          renderBrowseList();
-        };
+        input.oninput = function () { browseSearch = input.value; renderBrowseList(); };
       }
     }, 0);
 
@@ -1407,56 +693,75 @@
   }
 
   function renderBrowseList() {
-    var listHtml = '';
     var notes = Object.values(DB.notes);
-
-    // Filter
     if (browseFilter !== 'All') {
       notes = notes.filter(function (n) { return n.category === browseFilter; });
     }
     if (browseSearch) {
       var q = browseSearch.toLowerCase();
       notes = notes.filter(function (n) {
-        return n.title.toLowerCase().indexOf(q) !== -1 ||
-          (n.aliases && n.aliases.some(function (a) { return a.toLowerCase().indexOf(q) !== -1; }));
+        return searchIndex[n.id] && searchIndex[n.id].indexOf(q) !== -1;
       });
     }
-
-    // Sort alphabetically
     notes.sort(function (a, b) { return a.title.localeCompare(b.title); });
+
+    var html = '';
+
+    if (browseSearch && browseSearch.length >= 2 && STUDY && STUDY.drugs) {
+      var q = browseSearch.toLowerCase();
+      var matchedDrugs = STUDY.drugs.filter(function (d) {
+        return d.name.toLowerCase().indexOf(q) !== -1 ||
+               d.brand.toLowerCase().indexOf(q) !== -1;
+      });
+      if (matchedDrugs.length > 0) {
+        matchedDrugs.forEach(function (drug) {
+          html += '<div class="drug-lookup-card">' +
+            '<div class="drug-lookup-header">' +
+            '<div class="drug-lookup-name">' + escapeHtml(drug.name) + '</div>' +
+            '<div class="drug-lookup-brand">' + escapeHtml(drug.brand) + '</div>' +
+            '</div>' +
+            '<div class="drug-lookup-class">' + escapeHtml(drug.class) + '</div>' +
+            '<div class="drug-lookup-row"><span class="drug-lookup-label">Dose</span>' + escapeHtml(drug.dose) + '</div>' +
+            '<div class="drug-lookup-row"><span class="drug-lookup-label">Route</span>' + escapeHtml(drug.route) + '</div>' +
+            '<div class="drug-lookup-row"><span class="drug-lookup-label">Uses</span>' + escapeHtml(drug.uses) + '</div>' +
+            '<div class="drug-lookup-points">' + escapeHtml(drug.keyPoints) + '</div>' +
+            (drug.classNoteId && DB.notes[drug.classNoteId] ?
+              '<button class="note-link-chip" onclick="CKB.openNote(\'' + drug.classNoteId + '\',null,\'' + escapeHtml(drug.name.toLowerCase()) + '\')">' + escapeHtml(DB.notes[drug.classNoteId].title) + ' &rarr;</button>' : '') +
+            '</div>';
+        });
+      }
+    }
 
     notes.forEach(function (note) {
       var p = progress[note.id] || {};
       var color = !p.confidence ? 'var(--border)' :
                   p.confidence === 'solid' ? 'var(--green)' :
                   p.confidence === 'needs-review' ? 'var(--amber)' : 'var(--red)';
-      listHtml += '<div class="browse-item" onclick="CKB.openNote(\'' + note.id + '\')">' +
+      var searchArg = browseSearch ? ',null,\'' + escapeHtml(browseSearch.replace(/'/g, '')) + '\'' : '';
+      html += '<div class="browse-item" onclick="CKB.openNote(\'' + note.id + '\'' + searchArg + ')">' +
         '<div><div class="browse-item-title">' + escapeHtml(note.title) + '</div>' +
         '<div class="browse-item-cat">' + note.category + '</div></div>' +
         '<div class="browse-item-confidence" style="background:' + color + '"></div></div>';
     });
 
-    if (notes.length === 0) {
-      listHtml = '<p style="text-align:center;color:var(--text-muted);padding:20px">No notes found</p>';
+    if (notes.length === 0 && html === '') {
+      html = '<p style="text-align:center;color:var(--text-muted);padding:20px">No notes found</p>';
     }
-
-    document.getElementById('browse-list').innerHTML = listHtml;
+    document.getElementById('browse-list').innerHTML = html;
   }
 
   // ==================== NOTE DETAIL VIEW ====================
-  function openNote(noteId, scrollToSection) {
+  function openNote(noteId, scrollToSection, highlightTerm) {
     var note = DB.notes[noteId];
     if (!note) return;
 
     var html = '<div class="note-title">' + escapeHtml(note.title) + '</div>';
-
     var metaParts = [note.category];
     if (note.system) metaParts.push(note.system);
     if (note.drugClass) metaParts.push(note.drugClass);
     if (note.edTriage) metaParts.push(note.edTriage);
-    html += '<div class="note-meta">' + escapeHtml(metaParts.join(' \u00B7 ')) + '</div>';
+    html += '<div class="note-meta">' + escapeHtml(metaParts.join(' · ')) + '</div>';
 
-    // Sections
     var sectionOrder = ['definition', 'epidemiology', 'pathophysiology', 'mechanism',
       'clinicalFeatures', 'diagnosis', 'indications', 'keyDrugs', 'receptorProfiles',
       'management', 'adverseEffects', 'contraindications', 'pharmacokinetics',
@@ -1470,7 +775,6 @@
       keyPoints: 'Key Points', anatomy: 'Anatomy', physiology: 'Physiology', assessment: 'Assessment'
     };
 
-    // Show ordered sections first, then any remaining
     var shown = new Set();
     sectionOrder.forEach(function (key) {
       if (note.sections[key]) {
@@ -1488,7 +792,6 @@
       }
     });
 
-    // Clinical Pearls
     if (note.clinicalPearls && note.clinicalPearls.length > 0) {
       html += '<div class="note-section"><div class="note-section-title">Clinical Pearls</div>';
       note.clinicalPearls.forEach(function (p) {
@@ -1497,7 +800,6 @@
       html += '</div>';
     }
 
-    // Related notes
     var related = DB.graph[noteId] || [];
     if (related.length > 0) {
       html += '<div class="note-section"><div class="note-section-title">Related Notes</div><div class="note-links">';
@@ -1511,61 +813,108 @@
 
     document.getElementById('note-content').innerHTML = html;
     showView('note');
-    // Scroll to the target section, or top if no section specified
+
     if (scrollToSection) {
       setTimeout(function () {
         var el = document.getElementById('section-' + scrollToSection);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Brief highlight to show where you landed
           el.style.background = 'var(--accent-bg, rgba(59,130,246,0.1))';
           setTimeout(function () { el.style.background = ''; }, 2000);
         }
       }, 50);
-    } else {
-      document.getElementById('main').scrollTop = 0;
+    } else if (highlightTerm && highlightTerm.length >= 3) {
+      setTimeout(function () {
+        var term = highlightTerm.toLowerCase();
+        var container = document.getElementById('note-content');
+        var marks = highlightText(container, term);
+        if (marks.length > 0) {
+          setTimeout(function () {
+            marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 150);
+        }
+      }, 100);
     }
   }
 
-  // ==================== DAILY QUIPS ====================
-  var QUIPS = [
-    "Your patients don't know how lucky they are.",
-    "That lactate isn't going to trend itself.",
-    "Somewhere, a med student is struggling with what you already know.",
-    "You didn't survive nursing school to not know this stuff.",
-    "15 minutes now, fewer blank stares at the whiteboard later.",
-    "Be the nurse the night shift brags about.",
-    "Every expert was once a beginner who didn't quit.",
-    "The only bad study session is the one you skipped.",
-    "Future you is going to crush that next code blue.",
-    "You're not studying. You're sharpening weapons.",
-    "Somewhere a attending is about to be impressed.",
-    "Your brain called. It wants more pathophys.",
-    "The raccoon believes in you. Don't let the raccoon down.",
-    "One more session closer to knowing it cold.",
-    "Think of this as pre-gaming for your next shift.",
-    "Your stethoscope is judging you. Better study.",
-    "Neurons that fire together wire together. Let's go.",
-    "You know more than you think. Let's prove it.",
-    "The ED doesn't care what you forgot. So don't forget it.",
-    "Building clinical intuition, one scenario at a time.",
-    "You showed up. That's already more than most.",
-    "Your knowledge base has 234 notes. Your brain should too.",
-    "Competence is a habit, not a talent.",
-    "Less panic at the bedside starts right here.",
-    "Today's session is tomorrow's instinct.",
-    "Real learning feels uncomfortable. Lean in.",
-    "You're not just memorizing. You're becoming dangerous.",
-    "The sepsis clock is always ticking. Are you ready?",
-    "Pharmacology won't learn itself. Unfortunately.",
-    "Channel the energy of a nurse who just got a perfect IV stick.",
-  ];
+  function highlightText(root, term) {
+    var marks = [];
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var idx = node.textContent.toLowerCase().indexOf(term);
+      if (idx === -1) return;
+      var span = document.createElement('span');
+      var before = node.textContent.substring(0, idx);
+      var match = node.textContent.substring(idx, idx + term.length);
+      var after = node.textContent.substring(idx + term.length);
+      var mark = document.createElement('mark');
+      mark.className = 'search-highlight';
+      mark.textContent = match;
+      marks.push(mark);
+      span.appendChild(document.createTextNode(before));
+      span.appendChild(mark);
+      span.appendChild(document.createTextNode(after));
+      node.parentNode.replaceChild(span, node);
+    });
+    return marks;
+  }
 
-  function getDailyQuip() {
-    // Use the date as seed so the quip changes daily but stays consistent throughout the day
-    var today = new Date();
-    var seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    return QUIPS[seed % QUIPS.length];
+  // ==================== PROGRESS DASHBOARD ====================
+  function renderDashboard() {
+    if (!DB || !STUDY) return;
+    var html = '<div class="dash-title">Your Progress</div>';
+
+    var streak = getStreak();
+    html += '<div class="dash-section"><div class="streak-display">' +
+      '<div class="streak-number">' + streak.count + '</div>' +
+      '<div class="streak-label">day study streak</div></div></div>';
+
+    // Study mode coverage
+    var pools = [
+      { name: 'Presentations', items: STUDY.presentations },
+      { name: 'Conditions', items: STUDY.conditions },
+      { name: 'Principles', items: STUDY.principles },
+      { name: 'Codes', items: STUDY.codes }
+    ];
+    html += '<div class="dash-section"><div class="dash-section-title">Study Coverage</div>';
+    pools.forEach(function (pool) {
+      var seen = pool.items.filter(function (item) { return progress[item.id] && progress[item.id].lastSeen; }).length;
+      var pct = pool.items.length > 0 ? Math.round((seen / pool.items.length) * 100) : 0;
+      var color = pct > 70 ? 'green' : pct > 30 ? 'amber' : 'blue';
+      html += '<div class="progress-bar-container">' +
+        '<div class="progress-bar-label"><span>' + pool.name + '</span><span>' + seen + '/' + pool.items.length + '</span></div>' +
+        '<div class="progress-bar"><div class="progress-bar-fill ' + color + '" style="width:' + pct + '%"></div></div></div>';
+    });
+    html += '</div>';
+
+    // Browse coverage
+    html += '<div class="dash-section"><div class="dash-section-title">Vault Coverage (Browse)</div>';
+    ['Conditions', 'Pharmacology', 'Concepts', 'Systems', 'Procedures'].forEach(function (cat) {
+      var ids = DB.categories[cat] || [];
+      var seen = ids.filter(function (id) { return progress[id] && progress[id].lastSeen; }).length;
+      var pct = ids.length > 0 ? Math.round((seen / ids.length) * 100) : 0;
+      var color = pct > 70 ? 'green' : pct > 30 ? 'amber' : 'blue';
+      html += '<div class="progress-bar-container">' +
+        '<div class="progress-bar-label"><span>' + cat + '</span><span>' + seen + '/' + ids.length + '</span></div>' +
+        '<div class="progress-bar"><div class="progress-bar-fill ' + color + '" style="width:' + pct + '%"></div></div></div>';
+    });
+    html += '</div>';
+
+    // Confidence
+    var counts = { solid: 0, 'needs-review': 0, 'study-more': 0 };
+    Object.values(progress).forEach(function (p) {
+      if (p.confidence && counts[p.confidence] !== undefined) counts[p.confidence]++;
+    });
+    html += '<div class="dash-section"><div class="dash-section-title">Confidence Distribution</div>' +
+      '<div class="confidence-grid">' +
+      '<div class="confidence-box"><div class="confidence-number" style="color:var(--green)">' + counts.solid + '</div><div class="confidence-label">Solid</div></div>' +
+      '<div class="confidence-box"><div class="confidence-number" style="color:var(--amber)">' + counts['needs-review'] + '</div><div class="confidence-label">Review</div></div>' +
+      '<div class="confidence-box"><div class="confidence-number" style="color:var(--red)">' + counts['study-more'] + '</div><div class="confidence-label">Study More</div></div>' +
+      '</div></div>';
+
+    document.getElementById('dashboard').innerHTML = html;
   }
 
   // ==================== HELPERS ====================
@@ -1582,7 +931,6 @@
     var out = [];
     var i = 0;
 
-    // Format inline markdown (bold, italic, code) with HTML-escaping
     function fmt(s) {
       s = escapeHtml(s);
       s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -1594,39 +942,18 @@
     while (i < lines.length) {
       var line = lines[i];
       var trimmed = line.trim();
-
-      // Skip empty lines
       if (trimmed === '') { i++; continue; }
+      if (trimmed === '---' || trimmed === '***' || trimmed === '___') { out.push('<hr class="md-hr">'); i++; continue; }
+      if (trimmed.startsWith('### ')) { out.push('<h4 class="md-h3">' + fmt(trimmed.slice(4)) + '</h4>'); i++; continue; }
+      if (trimmed.startsWith('#### ')) { out.push('<h5 class="md-h4">' + fmt(trimmed.slice(5)) + '</h5>'); i++; continue; }
 
-      // Horizontal rule
-      if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
-        out.push('<hr class="md-hr">');
-        i++; continue;
-      }
-
-      // H3 heading
-      if (trimmed.startsWith('### ')) {
-        out.push('<h4 class="md-h3">' + fmt(trimmed.slice(4)) + '</h4>');
-        i++; continue;
-      }
-      // H4 heading
-      if (trimmed.startsWith('#### ')) {
-        out.push('<h5 class="md-h4">' + fmt(trimmed.slice(5)) + '</h5>');
-        i++; continue;
-      }
-
-      // Blockquote — collect consecutive > lines
       if (trimmed.startsWith('> ')) {
         var bqLines = [];
-        while (i < lines.length && lines[i].trim().startsWith('> ')) {
-          bqLines.push(fmt(lines[i].trim().slice(2)));
-          i++;
-        }
+        while (i < lines.length && lines[i].trim().startsWith('> ')) { bqLines.push(fmt(lines[i].trim().slice(2))); i++; }
         out.push('<blockquote class="md-bq">' + bqLines.join('<br>') + '</blockquote>');
         continue;
       }
 
-      // Table — collect consecutive | rows
       if (trimmed.match(/^\|.*\|$/)) {
         var tableRows = [];
         var pastSep = false;
@@ -1637,31 +964,23 @@
           var tag = !pastSep ? 'th' : 'td';
           var tr = '<tr>';
           cells.forEach(function (c) { tr += '<' + tag + '>' + fmt(c.trim()) + '</' + tag + '>'; });
-          tr += '</tr>';
-          tableRows.push(tr);
+          tableRows.push(tr + '</tr>');
           i++;
         }
         out.push('<table class="md-table">' + tableRows.join('') + '</table>');
         continue;
       }
 
-      // Bullet list (- or *) — collect consecutive bullet lines
       if (trimmed.match(/^[-*]\s/)) {
         var items = [];
         while (i < lines.length) {
-          var bl = lines[i];
-          var bt = bl.trim();
+          var bl = lines[i], bt = bl.trim();
           if (bt === '') break;
           var indent = bl.search(/\S/);
           var bm = bt.match(/^[-*]\s+(.*)/);
-          if (bm) {
-            items.push({ depth: indent >= 2 ? 1 : 0, html: fmt(bm[1]) });
-          } else if (indent >= 2 && items.length > 0) {
-            // Continuation of previous bullet
-            items[items.length - 1].html += ' ' + fmt(bt);
-          } else {
-            break;
-          }
+          if (bm) { items.push({ depth: indent >= 2 ? 1 : 0, html: fmt(bm[1]) }); }
+          else if (indent >= 2 && items.length > 0) { items[items.length - 1].html += ' ' + fmt(bt); }
+          else break;
           i++;
         }
         var ul = '<ul class="md-ul">';
@@ -1672,149 +991,106 @@
           ul += '<li>' + item.html + '</li>';
         });
         if (inSub) ul += '</ul></li>';
-        ul += '</ul>';
-        out.push(ul);
+        out.push(ul + '</ul>');
         continue;
       }
 
-      // Numbered list — collect consecutive numbered lines
       if (trimmed.match(/^\d+\.\s/)) {
         var ol = '<ol class="md-ol">';
         while (i < lines.length) {
-          var nl = lines[i];
-          var nt = nl.trim();
+          var nl = lines[i], nt = nl.trim();
           if (nt === '') break;
           var nm = nt.match(/^\d+\.\s+(.*)/);
-          if (nm) {
-            ol += '<li>' + fmt(nm[1]) + '</li>';
-          } else if (nl.search(/\S/) >= 2) {
-            // Sub-bullet inside numbered list
+          if (nm) { ol += '<li>' + fmt(nm[1]) + '</li>'; }
+          else if (nl.search(/\S/) >= 2) {
             var subBm = nt.match(/^[-*]\s+(.*)/);
-            if (subBm) {
-              ol += '<ul class="md-ul-nested"><li>' + fmt(subBm[1]) + '</li></ul>';
-            } else {
-              break;
-            }
-          } else {
-            break;
-          }
+            if (subBm) { ol += '<ul class="md-ul-nested"><li>' + fmt(subBm[1]) + '</li></ul>'; }
+            else break;
+          } else break;
           i++;
         }
-        ol += '</ol>';
-        out.push(ol);
+        out.push(ol + '</ol>');
         continue;
       }
 
-      // Regular paragraph text
       out.push('<p class="md-p">' + fmt(trimmed) + '</p>');
       i++;
     }
-
     return out.join('');
   }
 
   // ==================== PUBLIC API ====================
   window.CKB = {
     showView: showView,
-    openNote: function(noteId, sectionKey) { openNote(noteId, sectionKey); },
-    goBack: function () {
-      showView(previousView || 'home');
-    },
-    setBrowseFilter: function (f) {
-      browseFilter = f;
-      renderBrowse();
-    },
-    reveal: function (key) {
-      if (session.scenarioRevealed[key]) return;
-      session.scenarioRevealed[key] = true;
-      renderScenario();
-    },
-    revealPharm: function () {
-      session.pharmRevealed = true;
-      renderPharmFlash();
-    },
-    revealConcept: function () {
-      session.conceptRevealed = true;
-      var note = DB.notes[session.conceptId];
-      var card = document.getElementById('concept-card');
-      var actions = document.getElementById('concept-actions');
-      renderConceptCard(note, card, actions);
-    },
-    revealPearl: function () {
-      session['pearl_' + session.pearlIndex + '_revealed'] = true;
-      renderPearlCard();
-    },
-    rateStep: function (stepKey, rating) {
-      session.ratings[stepKey] = rating;
-      session.scenarioStep++;
-      if (session.scenarioStep <= 6) {
-        renderScenario();
-        document.getElementById('main').scrollTop = 0;
+    openNote: function (id, sec, hl) { openNote(id, sec, hl); },
+    goBack: function () { showView(previousView || 'home'); },
+    setBrowseFilter: function (f) { browseFilter = f; renderBrowse(); },
+
+    startMode: function (mode) {
+      switch (mode) {
+        case 'presentation': renderPresentation(); break;
+        case 'condition': renderCondition(); break;
+        case 'anatomy': renderAnatomy(); break;
+        case 'medclass': renderMedClass(); break;
+        case 'principle': renderPrinciple(); break;
+        case 'code': renderCode(); break;
       }
     },
-    rateScenario: function (confidence) {
-      recordView(session.conditionId, confidence);
-      // Move to pharm flash
-      session.pharmRevealed = false;
-      renderPharmFlash();
+
+    toggleDiff: function (idx) {
+      var body = document.getElementById('diff-body-' + idx);
+      var arrow = document.getElementById('diff-arrow-' + idx);
+      if (!body) return;
+      var showing = body.style.display !== 'none';
+      body.style.display = showing ? 'none' : 'block';
+      if (arrow) arrow.innerHTML = showing ? '&#9654;' : '&#9660;';
     },
-    ratePharm: function (confidence) {
-      recordView(session.pharmId, confidence);
-      goToConceptCheck();
+
+    toggleReveal: function (btn) {
+      var body = btn.nextElementSibling;
+      var arrow = btn.querySelector('.reveal-arrow');
+      if (!body) return;
+      var showing = body.style.display !== 'none';
+      body.style.display = showing ? 'none' : 'block';
+      if (arrow) arrow.innerHTML = showing ? '&#9654;' : '&#9660;';
     },
-    rateConcept: function (confidence) {
-      recordView(session.conceptId, confidence);
-      goToPearls();
-    },
-    nextPearl: function () {
-      session.pearlIndex++;
-      if (session.pearlIndex >= session.pearls.length) {
-        finishSession();
-      } else {
-        renderPearlCard();
-        document.getElementById('main').scrollTop = 0;
+
+    rate: function (mode, noteId, confidence) {
+      recordView(noteId, confidence);
+      bumpStreak();
+      renderHome();
+      // Re-render the current mode to show updated rating
+      switch (mode) {
+        case 'presentation': renderPresentation(); break;
+        case 'condition': renderCondition(); break;
+        case 'anatomy': renderAnatomy(); break;
+        case 'medclass': renderMedClass(); break;
+        case 'principle': renderPrinciple(); break;
+        case 'code': renderCode(); break;
       }
     },
-    nextStep: function () {
-      session.scenarioStep++;
-      renderScenario();
-      document.getElementById('main').scrollTop = 0;
+
+    answerCode: function (optIdx) {
+      var item = getStudyItem(STUDY.codes, todaySelections.codeId);
+      if (!item) return;
+      var step = item.steps[codeState.step];
+      codeState.selectedOption = optIdx;
+      codeState.revealed = true;
+      codeState.answers.push(step.options[optIdx].correct);
+      renderCode();
     },
-    prevStep: function () {
-      if (session.scenarioStep > 0) {
-        session.scenarioStep--;
-        renderScenario();
-        document.getElementById('main').scrollTop = 0;
-      }
+
+    nextCodeStep: function () {
+      codeState.step++;
+      codeState.revealed = false;
+      codeState.selectedOption = null;
+      renderCode();
     },
-    backToScenario: function () {
-      // Go back to last scenario step (pearls/step 6)
-      session.scenarioStep = 6;
-      renderScenario();
-      showView('scenario');
-      document.getElementById('main').scrollTop = 0;
-    },
-    backToPharm: function () {
-      renderPharmFlash();
-      document.getElementById('main').scrollTop = 0;
-    },
-    backToConcept: function () {
-      var note = DB.notes[session.conceptId];
-      if (note) {
-        var card = document.getElementById('concept-card');
-        var actions = document.getElementById('concept-actions');
-        renderConceptCard(note, card, actions);
-        showView('concept');
-        document.getElementById('main').scrollTop = 0;
-      }
-    },
-    prevPearl: function () {
-      if (session.pearlIndex > 0) {
-        session.pearlIndex--;
-        renderPearlCard();
-        document.getElementById('main').scrollTop = 0;
-      }
-    },
+
+    resetCode: function () {
+      codeState = null;
+      renderCode();
+    }
   };
 
   // ==================== BOOT ====================

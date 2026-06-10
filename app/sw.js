@@ -1,10 +1,11 @@
-const CACHE_NAME = 'clinicalkb-v3';
+const CACHE_NAME = 'clinicalkb-v4';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './data.json',
+  './study.json',
   './manifest.json'
 ];
 

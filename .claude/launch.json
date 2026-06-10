@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "study-app",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "C:/Users/stace/AppData/Local/Programs/Python/Python39/python",
       "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:/Users/stace/spaceport/ClinicalKB-Study/app"],
       "port": 8765
     }

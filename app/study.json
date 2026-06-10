@@ -1,0 +1,267 @@
+{
+  "presentations": [
+    {
+      "id": "chest-pain",
+      "chiefComplaint": "Chest Pain",
+      "arrival": "55M, acute onset substernal pressure, diaphoretic, clutching chest",
+      "differentials": [
+        {
+          "diagnosis": "STEMI",
+          "conditionId": "st-elevation-myocardial-infarction",
+          "diagnostics": [
+            { "test": "12-lead ECG", "lookingFor": "ST elevation in 2+ contiguous leads with reciprocal changes", "noteId": "ecg-interpretation" },
+            { "test": "Troponin (serial)", "lookingFor": "Rising pattern confirms myocardial necrosis; may be normal early", "noteId": "cardiac-biomarkers" }
+          ],
+          "distinguishing": "ST elevation + reciprocal changes on ECG; acute onset with diaphoresis; rising troponin",
+          "treatments": [
+            { "intervention": "Activate cath lab — PCI within 90 min of first medical contact", "why": "Mechanical reperfusion physically opens the blocked artery; time is muscle" },
+            { "med": "Aspirin 325mg chewed", "why": "Irreversible COX-1 inhibition prevents platelet aggregation at the clot; chewing speeds absorption", "noteId": "antiplatelet-agents" },
+            { "med": "Heparin drip (weight-based)", "why": "Prevents clot extension and new thrombus formation while awaiting cath lab", "noteId": "anticoagulants" },
+            { "med": "P2Y12 inhibitor (ticagrelor 180mg or clopidogrel 600mg)", "why": "Dual antiplatelet therapy — blocks the second major platelet activation pathway (ADP receptor)", "noteId": "antiplatelet-agents" },
+            { "med": "Nitroglycerin SL (if not inferior MI, not hypotensive)", "why": "Coronary vasodilation + venodilation decreases preload and myocardial oxygen demand", "noteId": "nitrates" }
+          ]
+        },
+        {
+          "diagnosis": "Pulmonary Embolism",
+          "conditionId": "pulmonary-embolism",
+          "diagnostics": [
+            { "test": "CT Pulmonary Angiography", "lookingFor": "Filling defect in pulmonary artery confirming clot", "noteId": "ct-interpretation" },
+            { "test": "D-dimer", "lookingFor": "Elevated fibrin degradation products; sensitive but not specific — useful to rule OUT PE", "noteId": "coagulation-studies" },
+            { "test": "ECG", "lookingFor": "Sinus tach most common; S1Q3T3 pattern (classic but uncommon); right heart strain", "noteId": "ecg-interpretation" }
+          ],
+          "distinguishing": "Pleuritic chest pain (worse with breathing); acute dyspnea out of proportion to exam; risk factors (immobility, surgery, OCP, cancer); tachycardia with clear lungs",
+          "treatments": [
+            { "med": "Heparin drip (weight-based)", "why": "Prevents clot propagation; does not dissolve existing clot but lets body's fibrinolysis work", "noteId": "anticoagulants" },
+            { "intervention": "tPA (alteplase) for massive PE with hemodynamic instability", "why": "Fibrinolytic directly dissolves clot when patient is in shock from PE" },
+            { "intervention": "Supplemental O2 and hemodynamic support", "why": "V/Q mismatch causes hypoxemia; may need fluids cautiously (RV is preload-sensitive but can fail with overload)" }
+          ]
+        },
+        {
+          "diagnosis": "Aortic Dissection",
+          "conditionId": "aortic-dissection",
+          "diagnostics": [
+            { "test": "CT Angiography (chest/abdomen/pelvis)", "lookingFor": "Intimal flap separating true and false lumen", "noteId": "ct-interpretation" },
+            { "test": "CXR", "lookingFor": "Widened mediastinum (>8cm); not always present", "noteId": "cxr-interpretation" },
+            { "test": "BP both arms", "lookingFor": ">20mmHg difference suggests dissection extending to subclavian artery" }
+          ],
+          "distinguishing": "Sudden tearing/ripping pain radiating to back; maximal at onset (not crescendo); BP differential between arms; pulse deficits; hypertension",
+          "treatments": [
+            { "med": "Esmolol drip (first-line) or labetalol", "why": "Rate AND BP control — must reduce aortic wall shear stress; target HR <60, SBP 100-120", "noteId": "beta-blockers" },
+            { "intervention": "Emergent surgical consult for Type A (ascending)", "why": "Type A dissections have high mortality without surgery; Type B may be managed medically" },
+            { "intervention": "Pain control (morphine/fentanyl)", "why": "Pain drives sympathetic response which worsens dissection; controlling pain helps control BP" }
+          ]
+        },
+        {
+          "diagnosis": "Tension Pneumothorax",
+          "conditionId": "pneumothorax",
+          "diagnostics": [
+            { "test": "Clinical diagnosis (do NOT delay for imaging)", "lookingFor": "Absent breath sounds unilaterally, tracheal deviation, JVD, hypotension, tachycardia" },
+            { "test": "Bedside lung ultrasound", "lookingFor": "Absent lung sliding on affected side; barcode sign on M-mode", "noteId": "lung-ultrasound" },
+            { "test": "CXR (only if stable enough)", "lookingFor": "Absent lung markings, mediastinal shift away from affected side", "noteId": "cxr-interpretation" }
+          ],
+          "distinguishing": "Acute dyspnea + unilateral absent breath sounds + hemodynamic instability; often post-trauma or post-procedure; tracheal deviation is a late sign",
+          "treatments": [
+            { "intervention": "Needle decompression (14g needle, 2nd ICS midclavicular or 5th ICS anterior axillary)", "why": "Immediately releases trapped air under pressure that is compressing the heart and great vessels" },
+            { "intervention": "Chest tube placement (follows needle decompression)", "why": "Definitive management — continuous drainage prevents reaccumulation" }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "conditions": [
+    {
+      "id": "st-elevation-myocardial-infarction",
+      "title": "STEMI",
+      "system": "cardiovascular-system",
+      "medClass": "antiplatelet-agents",
+      "overview": "Complete thrombotic occlusion of a coronary artery causing transmural (full-thickness) myocardial necrosis. Time-critical emergency — every minute of occlusion kills more myocardium. \"Time is muscle.\"",
+      "pathophysiology": "Atherosclerotic plaque rupture or erosion exposes subendothelial collagen → platelet adhesion (via vWF) → platelet activation and aggregation → fibrin mesh formation → complete coronary occlusion → downstream myocardium loses oxygen supply → ischemia progresses to necrosis from endocardium outward (wavefront phenomenon). Necrosis is irreversible within 20-40 minutes without reperfusion. Infarcted tissue releases troponin, CK-MB, and inflammatory mediators.",
+      "keyFeatures": "Crushing substernal chest pressure radiating to left arm/jaw/back. Diaphoresis, nausea, dyspnea. Women and diabetics may present atypically (fatigue, dyspnea, back pain, indigestion). ECG shows ST elevation in contiguous leads with reciprocal ST depression. Troponin rises within 3-6 hours.",
+      "management": "Activate cath lab immediately (Code STEMI). Door-to-balloon goal <90 minutes. ASA 325mg chewed + P2Y12 inhibitor + heparin drip. Nitroglycerin SL if not hypotensive and not inferior MI. Morphine only if pain uncontrolled (controversial — may worsen outcomes). Post-PCI: dual antiplatelet therapy, statin, beta-blocker, ACE inhibitor. Risk stratify with TIMI score.",
+      "nursingPriorities": "12-lead ECG within 10 minutes of arrival. Two large-bore IVs. Continuous cardiac monitoring. Serial troponins. Right-sided ECG if inferior STEMI (leads II, III, aVF) — determines if nitro/diuretics are safe. Monitor for reperfusion arrhythmias post-PCI. Strict I&O. Emotional support — this is terrifying for patients.",
+      "pearls": [
+        "Inferior STEMI (II, III, aVF) — get a right-sided ECG. Right ventricular involvement means the patient is preload-dependent: NO nitro, NO diuretics, give fluids.",
+        "\"Time is muscle\" — every 30-minute delay in reperfusion increases mortality. Treat ECG acquisition like a vital sign.",
+        "Wellens syndrome (deep symmetric T-wave inversions in V2-V3) = critical LAD stenosis about to occlude. Patient may feel fine between episodes. This is a pre-STEMI warning.",
+        "Post-discharge 5-drug bundle: ASA + P2Y12 + statin + beta-blocker + ACE inhibitor. Know why each one is there."
+      ]
+    }
+  ],
+
+  "anatomy": [
+    {
+      "id": "cardiovascular-system",
+      "title": "Cardiovascular System",
+      "keyStructures": "4-chamber pump: RA → RV → lungs → LA → LV → body. Right side is low-pressure (pulmonary), left side is high-pressure (systemic). LV wall is 3x thicker than RV because it pumps against systemic resistance.\n\n4 valves prevent backflow: Tricuspid (RA→RV), Pulmonic (RV→PA), Mitral (LA→LV), Aortic (LV→aorta). AV valves anchored by chordae tendineae to papillary muscles.\n\nConduction system: SA node (pacemaker, 60-100 bpm) → AV node (40-60 bpm, 0.1 sec delay) → Bundle of His → R/L bundle branches → Purkinje fibers (20-40 bpm).\n\nCoronary circulation: LCA splits to LAD (anterior wall, septum, apex) + LCx (lateral wall). RCA supplies inferior wall, RV, and usually the PDA. Coronaries fill during diastole.",
+      "normalPhysiology": "CO = HR x SV (normal 4-8 L/min). Stroke volume determined by preload (stretch), afterload (resistance), and contractility (squeeze strength).\n\nBP = CO x SVR. Mean arterial pressure (MAP) = DBP + 1/3(SBP - DBP). Minimum MAP for organ perfusion: ~60 mmHg.\n\nFrank-Starling mechanism: more stretch → more forceful contraction (up to a point — overstretched fibers lose contractile force, which is what happens in heart failure).\n\nBaroreceptor reflex: carotid/aortic stretch receptors detect pressure changes → rapid HR and vasomotor adjustment. RAAS provides long-term BP regulation through volume and vasoconstriction.",
+      "clinicalAssessment": "Heart sounds: S1 (AV valves close, start of systole), S2 (semilunar valves close, end of systole), S3 (rapid filling — normal in young, pathologic >40 = HF), S4 (atrial kick against stiff ventricle = HTN, AS). Murmurs = turbulent flow.\n\nAuscultation points: Aortic (R 2nd ICS), Pulmonic (L 2nd ICS), Erb's (L 3rd ICS), Tricuspid (L 4th ICS), Mitral (L 5th ICS MCL). Mnemonic: All Patients Enjoy Taking Medicine.\n\nJVD: >4 cm above sternal angle at 45 degrees = elevated right heart pressure. Peripheral pulses 0-4+. Cap refill <3 sec. Orthostatic vitals: drop >20 systolic or >10 diastolic = orthostatic hypotension.",
+      "labValues": "Troponin: gold standard for myocardial injury (rises 3-6 hr, peaks 12-24 hr). BNP/NT-proBNP: heart failure marker (>400 strongly suggests HF). PT/INR: extrinsic pathway, monitors warfarin. aPTT: intrinsic pathway, monitors heparin. D-dimer: fibrinolysis marker, rules out DVT/PE. Lactate: tissue hypoperfusion, shock indicator.",
+      "clinicalConnection": "In STEMI: LAD occlusion → anterior wall ischemia → troponin release → ST elevation in V1-V4. Frank-Starling fails as infarcted muscle can't contract → decreased CO → cardiogenic shock if large territory. Coronary arteries fill in diastole, so tachycardia (shorter diastole) worsens ischemia. Beta-blockers slow HR partly to protect coronary filling time."
+    }
+  ],
+
+  "medications": [
+    {
+      "id": "antiplatelet-agents",
+      "title": "Antiplatelet Agents",
+      "moa": "Inhibit platelet activation and aggregation through different mechanisms:\n- COX-1 inhibition (aspirin): blocks thromboxane A2 production, which normally promotes platelet aggregation. Irreversible — lasts the life of the platelet (8-10 days).\n- P2Y12 receptor antagonists (clopidogrel, ticagrelor, prasugrel): block ADP-mediated platelet activation. Clopidogrel is irreversible (prodrug, needs hepatic activation). Ticagrelor is reversible (faster offset).\n- GP IIb/IIIa inhibitors (eptifibatide, abciximab): block the final common pathway of platelet aggregation. IV only, used in cath lab.",
+      "fdaUses": ["Acute Coronary Syndrome (STEMI, NSTEMI, unstable angina)", "Secondary prevention of MI and stroke", "Post-PCI stent maintenance (dual antiplatelet therapy)", "Peripheral arterial disease"],
+      "nonFdaUses": ["Primary prevention in very high-risk patients (controversial, USPSTF updated 2022)", "Kawasaki disease (aspirin)"],
+      "edDrugs": [
+        { "name": "Aspirin", "dose": "325mg chewed (ACS loading), 81mg daily (maintenance)", "why": "Cornerstone of ALL ACS management. Chewing bypasses first-pass metabolism for faster onset (~15 min vs 60 min swallowed). Contraindicated in true aspirin allergy — use clopidogrel alone." },
+        { "name": "Clopidogrel (Plavix)", "dose": "600mg loading dose, then 75mg daily", "why": "P2Y12 inhibitor for dual antiplatelet therapy. Prodrug — requires CYP2C19 activation, so ~2-hour onset and some patients are poor metabolizers (consider genetic testing). Used when ticagrelor is contraindicated." },
+        { "name": "Ticagrelor (Brilinta)", "dose": "180mg loading dose, then 90mg BID", "why": "Preferred P2Y12 inhibitor in ACS — faster onset, more potent, and reversible (unlike clopidogrel). PLATO trial showed mortality benefit over clopidogrel. Side effects: dyspnea (benign, self-limiting), bradycardia." },
+        { "name": "Prasugrel (Effient)", "dose": "60mg loading dose, then 10mg daily", "why": "Most potent P2Y12 inhibitor — fastest, most consistent platelet inhibition. But highest bleeding risk. Contraindicated in prior stroke/TIA, age >75, weight <60kg. Used selectively in cath lab." }
+      ],
+      "adverseEffects": "Bleeding is the major risk across all agents — GI bleeding, intracranial hemorrhage, surgical bleeding. Aspirin: GI ulceration, tinnitus at high doses. Clopidogrel: TTP (rare). Ticagrelor: dyspnea (dose-related, usually tolerable), ventricular pauses. Prasugrel: highest bleeding risk of the P2Y12 agents.",
+      "nursingConsiderations": "Hold for active bleeding. Check platelet count (thrombocytopenia increases risk). Teach patients: bleeding precautions, soft toothbrush, electric razor, avoid NSAIDs, report blood in stool/urine/dark tarry stools. Do NOT crush ticagrelor (can give via NG if needed). Dual antiplatelet therapy duration: usually 12 months post-ACS/stent, then step down to aspirin alone. Patients must understand they CANNOT stop these medications without talking to cardiology — stent thrombosis risk."
+    }
+  ],
+
+  "principles": [
+    {
+      "id": "electricity-and-excitability",
+      "title": "Electricity and Excitability",
+      "theCore": "Every nerve signal, muscle contraction, and heartbeat is an electrical event. Cells maintain a voltage difference across their membranes (resting membrane potential) by actively pumping ions. When a cell is stimulated, ion channels open, ions rush across the membrane, and the voltage changes — this is an action potential. In the heart, this electrical wave coordinates the mechanical pump.",
+      "howItWorks": "The Na+/K+ ATPase pump maintains resting potential by pumping 3 Na+ out and 2 K+ in, creating a net negative charge inside (-70mV in neurons, -90mV in cardiac cells).\n\nAction potential phases (cardiac):\n- Phase 0: Rapid depolarization — Na+ channels open, Na+ rushes in (this is the QRS on ECG)\n- Phase 1: Brief repolarization — Na+ channels close, some K+ exits\n- Phase 2: Plateau — Ca2+ enters through L-type channels (triggers contraction; this is the ST segment)\n- Phase 3: Repolarization — K+ channels open, K+ exits, Ca2+ channels close (T wave)\n- Phase 4: Return to resting potential\n\nSA node cells are special: they have no true resting potential. Phase 4 slowly depolarizes on its own (funny current, If) — this is automaticity, and it's why the heart beats without external input.",
+      "clinicalConnection": "Electrolyte imbalances directly alter these electrical events:\n- K+ is the dominant ion for resting membrane potential. Hyperkalemia makes cells hyperexcitable initially (peaked T waves) then paradoxically inexcitable (widened QRS, sine wave, arrest). Hypokalemia makes repolarization abnormal (U waves, QT prolongation, torsades risk).\n- Ca2+ is essential for the plateau phase and muscle contraction. Hypocalcemia prolongs QT. Hypercalcemia shortens QT.\n- Mg2+ stabilizes ion channels. Hypomagnesemia makes arrhythmias harder to treat — always check and replace Mg2+ alongside K+.\n\nAntiarrhythmic drugs work by targeting specific ion channels: Na+ channel blockers (Class I), beta-blockers slow the SA/AV nodes (Class II), K+ channel blockers prolong repolarization (Class III), Ca2+ channel blockers slow AV conduction (Class IV).",
+      "atTheBedside": "When you see peaked T waves on the monitor — think hyperkalemia. Calcium gluconate is first-line because it stabilizes the cardiac membrane (raises the threshold potential) without changing the K+ level. It buys you time while insulin/glucose and other treatments actually shift K+ back into cells.\n\nWhy we give magnesium for torsades de pointes: Mg2+ stabilizes the cell membrane and shortens the repolarization phase, breaking the cycle of triggered activity that drives the arrhythmia.\n\nWhy pacing works in complete heart block: the SA node signal can't reach the ventricles, so the ventricle relies on its own escape rhythm (20-40 bpm). An external pacemaker provides the electrical stimulus the conduction system can't deliver.",
+      "linkedConditions": ["hyperkalemia", "cardiac-arrest", "dysrhythmias"],
+      "linkedMeds": ["antiarrhythmics", "neuromuscular-blocking-agents", "local-anesthetics"]
+    }
+  ],
+
+  "codes": [
+    {
+      "id": "cardiac-arrest-vfib-pvt",
+      "title": "Cardiac Arrest: VFib / Pulseless VT",
+      "scenario": "Adult found unresponsive on the floor. Coworker called for help. You arrive first.",
+      "steps": [
+        {
+          "prompt": "You find the patient unresponsive, not breathing normally. No pulse on carotid check (10 seconds). What's your immediate action?",
+          "options": [
+            { "text": "Start high-quality CPR — call for help and a defibrillator", "correct": true, "feedback": "Correct. CPR is THE priority. Push hard (at least 2 inches), push fast (100-120/min), allow full chest recoil, and minimize interruptions. Call a code and get a defibrillator coming while you compress. Every minute without CPR decreases survival by 7-10%." },
+            { "text": "Run to get the defibrillator", "correct": false, "feedback": "Don't leave the patient — start CPR and have someone ELSE get the defibrillator. If you're alone, call the code first (so help is coming), then start CPR. The exception: if an AED is within arm's reach, grab it." },
+            { "text": "Open the airway and give 2 rescue breaths", "correct": false, "feedback": "In witnessed adult cardiac arrest, compressions take priority over ventilations. Compression-only CPR is acceptable until advanced airway equipment arrives. The focus is on maintaining coronary and cerebral perfusion pressure." }
+          ]
+        },
+        {
+          "prompt": "The crash cart arrives. The defibrillator pads are on. The monitor shows VFib (chaotic, irregular waveform, no organized QRS). What's next?",
+          "options": [
+            { "text": "Defibrillate — biphasic 200J, then immediately resume CPR", "correct": true, "feedback": "Correct. VFib is a SHOCKABLE rhythm. Charge while CPR continues, clear the patient, shock, then IMMEDIATELY resume CPR for 2 minutes before the next rhythm check. Don't stop to check for a pulse after the shock — get right back on the chest." },
+            { "text": "Give epinephrine 1mg IV push first, then shock", "correct": false, "feedback": "In VFib/pVT, the first shock comes BEFORE epinephrine. Epi is given after the 2nd shock (first dose), then every 3-5 minutes. Defibrillation is the definitive treatment for VFib — don't delay it." },
+            { "text": "Give amiodarone 300mg IV push first", "correct": false, "feedback": "Amiodarone doesn't come until after the 3rd shock in refractory VFib/pVT. The sequence is: shock → CPR → shock → CPR + epi → shock → CPR + amiodarone. Shock first." }
+          ]
+        },
+        {
+          "prompt": "After 2 minutes of CPR, rhythm check still shows VFib. You defibrillate again (2nd shock). What medications are indicated NOW?",
+          "options": [
+            { "text": "Epinephrine 1mg IV push — repeat every 3-5 minutes", "correct": true, "feedback": "Correct. After the 2nd shock, give epinephrine 1mg IV/IO push. Epi's alpha-1 effect causes peripheral vasoconstriction, which increases coronary and cerebral perfusion pressure during CPR. Repeat every 3-5 minutes (every other cycle). Follow with a 20mL flush and elevate the arm." },
+            { "text": "Amiodarone 300mg IV push", "correct": false, "feedback": "Amiodarone comes after the 3RD shock if VFib/pVT persists. Right now you should be giving epinephrine after this 2nd shock." },
+            { "text": "Atropine 1mg IV push", "correct": false, "feedback": "Atropine is NOT used in cardiac arrest (removed from ACLS algorithm in 2010). It was previously used for asystole/PEA but showed no benefit. Think epi and amiodarone for arrest." }
+          ]
+        },
+        {
+          "prompt": "Two more minutes of CPR. Rhythm check: still VFib. You defibrillate a 3rd time. VFib persists. What now?",
+          "options": [
+            { "text": "Amiodarone 300mg IV push + continue epi every 3-5 min", "correct": true, "feedback": "Correct. After the 3rd shock with refractory VFib, give amiodarone 300mg IV/IO push. A second dose of 150mg can be given if VFib continues. Amiodarone blocks K+ channels (prolongs repolarization) and has Na+ and Ca2+ channel blocking properties — it stabilizes the chaotic electrical activity. Continue epi every 3-5 minutes." },
+            { "text": "Lidocaine 1-1.5mg/kg IV push", "correct": false, "feedback": "Lidocaine is an alternative if amiodarone is unavailable, but amiodarone is preferred (ALPS trial showed comparable outcomes, but amiodarone is the standard). The dose would be 1-1.5 mg/kg IV, with repeat doses of 0.5-0.75 mg/kg." },
+            { "text": "Increase defibrillation energy to maximum", "correct": false, "feedback": "Most biphasic defibrillators already start at or near maximum effective energy (200J). Escalating energy is reasonable if the manufacturer recommends it, but the bigger issue is adding antiarrhythmics to break the refractory VFib. Give amiodarone." }
+          ]
+        },
+        {
+          "prompt": "After the next shock, the rhythm check shows organized QRS complexes on the monitor. What do you do?",
+          "options": [
+            { "text": "Check for a pulse — if present, begin post-arrest care", "correct": true, "feedback": "Correct! Organized rhythm on the monitor could be ROSC (return of spontaneous circulation) or PEA. Check for a pulse. If present: obtain 12-lead ECG (looking for STEMI as cause), start targeted temperature management (TTM), optimize ventilation (target SpO2 94-99%, ETCO2 35-45), vasopressor drip for MAP >65, and treat the underlying cause. If no pulse → it's PEA, and you resume CPR." },
+            { "text": "Immediately resume CPR for another 2 minutes", "correct": false, "feedback": "When you see an organized rhythm, PAUSE to check for a pulse. If the rhythm had still been VFib or asystole, you'd resume CPR immediately. But an organized rhythm might mean ROSC — you need to check." },
+            { "text": "Give another round of epinephrine", "correct": false, "feedback": "Don't give more epi before checking if you have ROSC. If the patient has a pulse, additional vasopressors should be given as a drip (not push-dose epi) titrated to MAP >65." }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "drugs": [
+    {
+      "name": "Ipratropium",
+      "brand": "Atrovent",
+      "class": "Anticholinergic bronchodilator (SAMA)",
+      "classNoteId": "bronchodilators",
+      "dose": "Neb: 0.5 mg q6-8h; MDI: 2 puffs QID",
+      "route": "Inhaled (MDI or nebulizer)",
+      "uses": "Acute COPD exacerbation, severe asthma exacerbation (with albuterol)",
+      "keyPoints": "Slower onset than albuterol (15-30 min vs 5 min). Always combine with albuterol in acute setting — never use alone for rescue. Blocks muscarinic M3 receptors on airway smooth muscle. DuoNeb = albuterol + ipratropium combo."
+    },
+    {
+      "name": "Ondansetron",
+      "brand": "Zofran",
+      "class": "5-HT3 receptor antagonist (antiemetic)",
+      "classNoteId": "antiemetics",
+      "dose": "4-8 mg IV/PO q6-8h PRN; chemo: 8-24 mg per protocol",
+      "route": "IV, PO, ODT (dissolves on tongue)",
+      "uses": "PONV, chemotherapy-induced N/V, general nausea, ED nausea of any cause",
+      "keyPoints": "Most commonly used antiemetic in the ED. QTc prolongation at high doses — max single IV dose 16 mg. Constipation is the most common side effect. ODT formulation is great for patients who can't keep anything down. Works at the chemoreceptor trigger zone and vagal afferents."
+    },
+    {
+      "name": "Aspirin",
+      "brand": "ASA",
+      "class": "COX inhibitor / antiplatelet",
+      "classNoteId": "antiplatelet-agents",
+      "dose": "325 mg chewed (ACS loading); 81 mg daily (maintenance)",
+      "route": "PO (chewed for ACS)",
+      "uses": "ACS (STEMI/NSTEMI), secondary prevention of MI and stroke, fever/pain (OTC doses)",
+      "keyPoints": "CHEW for ACS — bypasses first-pass metabolism, onset in ~15 min vs 60 min swallowed. Irreversible COX-1 inhibition lasts the life of the platelet (8-10 days). Cornerstone of ALL ACS management. Contraindicated in true aspirin allergy — use clopidogrel alone."
+    },
+    {
+      "name": "Epinephrine",
+      "brand": "Adrenalin",
+      "class": "Catecholamine (sympathomimetic)",
+      "classNoteId": "vasopressors-and-inotropes",
+      "dose": "Cardiac arrest: 1 mg IV q3-5 min. Anaphylaxis: 0.3-0.5 mg IM (1:1000). Drip: 1-10 mcg/min",
+      "route": "IV push, IM, IV drip, nebulized, subQ",
+      "uses": "Cardiac arrest, anaphylaxis, severe asthma, bradycardia, septic shock (2nd line)",
+      "keyPoints": "Different doses for different indications — know them cold. IM in the anterolateral thigh for anaphylaxis (NOT subQ, NOT deltoid). In arrest: alpha-1 vasoconstriction increases coronary perfusion pressure. Auto-injector = 0.3 mg adult, 0.15 mg pediatric. Epi drip: start low, titrate to MAP."
+    },
+    {
+      "name": "Metoprolol",
+      "brand": "Lopressor (tartrate) / Toprol-XL (succinate)",
+      "class": "Beta-1 selective blocker",
+      "classNoteId": "beta-blockers",
+      "dose": "IV: 5 mg q5 min x 3. PO: tartrate 25-100 mg BID; succinate 25-200 mg daily",
+      "route": "IV, PO",
+      "uses": "Rate control (afib, aflutter, SVT), ACS, hypertension, HFrEF (succinate only)",
+      "keyPoints": "Tartrate = short-acting BID for acute use. Succinate = extended-release daily for chronic HF (ONLY succinate has mortality benefit in HFrEF). IV for acute rate control in ED. Hold if HR <60, SBP <90, or acute decompensated HF. Check for asthma/COPD — beta-1 selectivity is dose-dependent."
+    },
+    {
+      "name": "Fentanyl",
+      "brand": "Sublimaze",
+      "class": "Synthetic opioid analgesic",
+      "classNoteId": "opioid-analgesics",
+      "dose": "IV: 25-100 mcg q30-60 min. Intranasal: 1.5 mcg/kg. Patch: 12-100 mcg/hr",
+      "route": "IV, IM, intranasal, transdermal, transmucosal",
+      "uses": "Acute severe pain, procedural sedation, trauma pain, chronic pain (patch)",
+      "keyPoints": "50-100x more potent than morphine. Faster onset (2-3 min IV, 10-15 min IN) and shorter duration than morphine. Less histamine release = less hypotension, better for hemodynamically unstable patients. Intranasal is great for needle-phobic patients and quick field analgesia. Chest wall rigidity risk at high IV doses."
+    },
+    {
+      "name": "Heparin",
+      "brand": "Heparin (unfractionated)",
+      "class": "Indirect thrombin inhibitor (anticoagulant)",
+      "classNoteId": "anticoagulants",
+      "dose": "VTE: 80 units/kg bolus then 18 units/kg/hr. ACS: 60 units/kg bolus (max 4000) then 12 units/kg/hr",
+      "route": "IV drip, subQ (prophylactic dosing)",
+      "uses": "ACS, PE, DVT, stroke, bridging to warfarin, dialysis circuit",
+      "keyPoints": "Weight-based dosing is critical — protocols differ by indication. Monitor aPTT q6h, goal 60-80 sec (1.5-2.5x normal). Short half-life (60-90 min) = can be turned off quickly if bleeding. Antidote: protamine sulfate. HIT (heparin-induced thrombocytopenia) — check platelets; if dropping, STOP heparin and switch to argatroban."
+    },
+    {
+      "name": "Furosemide",
+      "brand": "Lasix",
+      "class": "Loop diuretic",
+      "classNoteId": "diuretics",
+      "dose": "IV: 20-80 mg; PO: 20-80 mg daily-BID. Acute HF: IV dose = home PO dose or 2.5x",
+      "route": "IV (preferred in acute), PO",
+      "uses": "Acute decompensated heart failure, pulmonary edema, volume overload, hyperkalemia (adjunct), hypercalcemia",
+      "keyPoints": "Works in 5 min IV vs 30-60 min PO. Blocks Na-K-2Cl cotransporter in loop of Henle. Monitor K+, Mg2+, and Ca2+ — all wasted with loop diuretics. Ototoxicity risk with rapid IV push (push over 1-2 min). Assess urine output after dosing — if poor response, double the dose. 'Lasix = lasts six hours.'"
+    }
+  ]
+}
